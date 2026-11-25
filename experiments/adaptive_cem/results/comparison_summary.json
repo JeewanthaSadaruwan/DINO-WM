@@ -1,0 +1,243 @@
+{
+  "n_paired_tasks": 50,
+  "paired_tasks": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50
+  ],
+  "excluded": [],
+  "task_identity_check": "task file sha1, received start/goal targets, seed and CEM settings identical for every paired task",
+  "original": {
+    "evaluated_tasks": 50,
+    "successful_tasks": 49,
+    "success_rate": 0.98,
+    "total_cem_iterations": 452,
+    "avg_cem_iterations_per_call": 5.7215189873417724,
+    "n_planning_calls": 79,
+    "avg_mpc_calls_per_task": 1.58,
+    "total_candidates": 135600,
+    "total_wm_rollout_calls": 452,
+    "total_predictor_forward_calls": 2260,
+    "total_encoder_forward_calls": 531,
+    "avg_planning_time_per_task_s": 42.67723701878204,
+    "total_planning_time_s": 2133.8618509391017,
+    "mean_final_state_dist": 4.699745323171161,
+    "convergence_stops": 0,
+    "success_stops": 49,
+    "max_iteration_stops": 30,
+    "tasks_hitting_mpc_cap": 1,
+    "avg_process_wall_time_per_task_s": 48.8660047006607
+  },
+  "adaptive": {
+    "evaluated_tasks": 50,
+    "successful_tasks": 50,
+    "success_rate": 1,
+    "total_cem_iterations": 220,
+    "avg_cem_iterations_per_call": 3.0985915492957745,
+    "n_planning_calls": 71,
+    "avg_mpc_calls_per_task": 1.42,
+    "total_candidates": 66000,
+    "total_wm_rollout_calls": 220,
+    "total_predictor_forward_calls": 1100,
+    "total_encoder_forward_calls": 291,
+    "avg_planning_time_per_task_s": 20.953864433459092,
+    "total_planning_time_s": 1047.6932216729547,
+    "mean_final_state_dist": 4.550629186704436,
+    "convergence_stops": 20,
+    "success_stops": 50,
+    "max_iteration_stops": 1,
+    "tasks_hitting_mpc_cap": 0,
+    "avg_process_wall_time_per_task_s": 25.831707706451414
+  },
+  "reductions_pct": {
+    "R_I": 51.32743362831859,
+    "R_T": 50.901544014582285,
+    "R_C": 51.32743362831859,
+    "R_predictor_calls": 51.32743362831859
+  },
+  "bootstrap_95ci": {
+    "R_I": [
+      11.11111111111111,
+      72.22222222222223
+    ],
+    "R_T": [
+      10.870228815887108,
+      71.911097776371
+    ],
+    "R_C": [
+      11.11111111111111,
+      72.22222222222223
+    ],
+    "mean_planning_time_baseline": [
+      18.684965425200716,
+      83.17675402354463
+    ],
+    "mean_planning_time_adaptive": [
+      15.508171936858853,
+      27.24791057423914
+    ]
+  },
+  "sensitivity_excluding_mpc_cap_tasks": {
+    "excluded_tasks": [
+      45
+    ],
+    "n_tasks": 49,
+    "R_I": 20.634920634920636,
+    "R_T": 20.287255439439637,
+    "R_C": 20.634920634920636,
+    "R_I_ci": [
+      8.064516129032258,
+      31.372549019607842
+    ],
+    "R_T_ci": [
+      7.832820866647237,
+      30.964417893760775
+    ]
+  },
+  "change": {
+    "success_rate_pp": 2.0000000000000018
+  },
+  "paired_stats": {
+    "success_original_only": 0,
+    "success_adaptive_only": 1,
+    "success_mcnemar_exact_p": 1.0,
+    "planning_time_diff_s_mean": -21.72337258532294,
+    "planning_time_diff_s_median": -0.00484049799888453,
+    "tasks_adaptive_faster": 29,
+    "tasks_identical_iterations": 39,
+    "iteration_diff_mean": -4.64,
+    "tasks_adaptive_fewer_iterations": 9,
+    "tasks_adaptive_more_iterations": 2
+  },
+  "table": [
+    {
+      "metric": "Evaluated tasks",
+      "original": 50,
+      "adaptive": 50,
+      "change": "paired"
+    },
+    {
+      "metric": "Successful tasks",
+      "original": 49,
+      "adaptive": 50,
+      "change": "+1"
+    },
+    {
+      "metric": "Success rate",
+      "original": "98.0%",
+      "adaptive": "100.0%",
+      "change": "+2.0 pp"
+    },
+    {
+      "metric": "Total CEM iterations",
+      "original": "452",
+      "adaptive": "220",
+      "change": "-232 (-51.3%)"
+    },
+    {
+      "metric": "Average CEM iterations per planning call",
+      "original": "5.72",
+      "adaptive": "3.10",
+      "change": "-2.62 (-45.8%)"
+    },
+    {
+      "metric": "Average MPC replanning calls per task",
+      "original": "1.58",
+      "adaptive": "1.42",
+      "change": "-0.16 (-10.1%)"
+    },
+    {
+      "metric": "Total candidate sequences evaluated",
+      "original": "135,600",
+      "adaptive": "66,000",
+      "change": "-69,600 (-51.3%)"
+    },
+    {
+      "metric": "Total predictor forward calls (batched)",
+      "original": "2,260",
+      "adaptive": "1,100",
+      "change": "-1,160 (-51.3%)"
+    },
+    {
+      "metric": "Average planning time per task",
+      "original": "42.68 s",
+      "adaptive": "20.95 s",
+      "change": "-21.72 s (-50.9%)"
+    },
+    {
+      "metric": "Total planning time",
+      "original": "2133.9 s",
+      "adaptive": "1047.7 s",
+      "change": "-1,086.2 s (-50.9%)"
+    },
+    {
+      "metric": "Mean final state distance (pos+vel)",
+      "original": "4.700",
+      "adaptive": "4.551",
+      "change": "-0.149 (-3.2%)"
+    },
+    {
+      "metric": "Convergence-triggered stops (calls)",
+      "original": 0,
+      "adaptive": 20,
+      "change": ""
+    },
+    {
+      "metric": "Tasks hitting MPC step cap",
+      "original": 1,
+      "adaptive": 0,
+      "change": ""
+    }
+  ],
+  "convergence_example": {
+    "task": 6,
+    "mpc_call": 1
+  }
+}

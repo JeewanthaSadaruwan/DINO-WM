@@ -1,0 +1,4 @@
+eval_seed,status,success,mpc_iterations,final_state_dist,final_visual_dist,final_proprio_dist,initial_state,goal_state,output_dir
+2,success,True,1,1.6887881322640321,0.4233896683673469,0.5048093795776367,1.0321 2.1101 -2.0941 -2.4372,0.8499 1.8353 -3.2984 2.9825,experiments/pointmaze_corrected_smoketest/results/seed_02
+3,success,True,1,5.436648912234867,0.44701318027210885,1.7619162797927856,2.8217 2.8304 -3.9136 -3.0600,0.6338 1.6461 -4.9140 -0.4512,experiments/pointmaze_corrected_smoketest/results/seed_03
+4,success,True,1,2.539947122800458,0.38372262967687076,0.850956380367279,3.0143 1.9228 4.9407 2.2454,3.0383 0.5162 -2.5820 -0.6816,experiments/pointmaze_corrected_smoketest/results/seed_04

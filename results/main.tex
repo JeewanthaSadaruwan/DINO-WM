@@ -50,9 +50,12 @@ give the headline results.
     \toprule
     \textbf{Task} & \textbf{Ours} & \textbf{Distinct tasks} & \textbf{Paper} & \textbf{Comparable to paper?} \\
     \midrule
-    PointMaze & 50/50 (100\%) & 1  & 98\% & No: one task repeated 50 times \\
+    PointMaze & 49/50 (98\%)  & 50 & 98\% & Yes (corrected protocol) \\
     PushT     & 48/50 (96\%)  & 49 & 90\% & Yes \\
-    Wall      & 1/1 (100\%)   & 1  & 96\% & No: single test run; 50-task run pending \\
+    Wall      & 48/50 (96\%)  & 50 & 96\% & Yes (corrected protocol) \\
+    \midrule
+    \multicolumn{5}{l}{\textit{Historical, superseded:} PointMaze 50/50 (100\%) on 1 task repeated 50 times
+      (Section~\ref{sec:pm-hist})} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -60,8 +63,9 @@ give the headline results.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.82\linewidth]{figures/fig01_success_vs_paper.png}
-  \caption{Success rate of our reproduction versus the paper. Only the PushT bar
-  is a like-for-like comparison (see Section~\ref{sec:seed}).}
+  \caption{Success rate of our reproduction versus the paper. PointMaze (corrected
+  protocol, 50 distinct tasks), PushT and Wall (corrected protocol, 50
+  distinct tasks) are all like-for-like comparisons.}
   \label{fig:success}
 \end{figure}
 
@@ -72,13 +76,26 @@ give the headline results.
         The two failures never reached the goal, and their world-model
         predictions visibly drifted from the real environment
         (Section~\ref{sec:pusht-fail}).
-  \item \textbf{PointMaze: the planner succeeded on all 50 runs, but they were
-        the same task.} Running with \texttt{n\_evals=1} fixes the evaluation
-        seed to 1, so all runs used one start/goal pair. The runs show the
-        planner is reliable on that task, not a 50-task success rate.
-  \item \textbf{Wall: the pipeline works.} One test task succeeded in a single
-        MPC iteration, reducing the state distance from 25.7 to 3.4. The
-        50-task run has not been done yet.
+  \item \textbf{PointMaze: 98\% (49/50) on 50 distinct tasks, matching the
+        paper's 98\%.} 41 tasks were solved in the first MPC iteration and 8
+        needed 2--3 iterations of re-planning. The one failure (seed 45) has
+        the longest start-to-goal distance of the 50 tasks and was stopped at
+        the 20-iteration cap.
+  \item \textbf{PointMaze evaluation protocol corrected.} Our first PointMaze
+        evaluation reported 50/50, but a seed bug in \texttt{plan.py} made all
+        50 runs use the \emph{same} start/goal pair. We fixed the protocol and
+        re-ran it; the old result is kept as a historical experiment
+        (Sections~\ref{sec:seed} and~\ref{sec:pm-hist}).
+  \item \textbf{Wall: 96\% (48/50) on 50 distinct tasks, matching the paper's
+        96\%.} 36 tasks were solved in the first MPC iteration and 12 needed
+        2--4 iterations. The two failures (seeds 13 and 31) stopped at the
+        20-iteration cap with the agent pressed against the wall below the
+        door (Section~\ref{sec:wall}).
+  \item \textbf{Extension: adaptive CEM early stopping cut PointMaze planning
+        computation without losing success.} Over the same 50 tasks, CEM
+        iterations fell by 51\% and planning time by 51\%, and success was
+        50/50 versus 49/50. Most of the saving comes from one task (seed 45);
+        excluding it, the reduction is about 20\% (Section~\ref{sec:acem}).
   \item \textbf{Earlier report corrected.} The previous version reported
         PushT as 50/50 and compared it with 86\%. Two runs had crashed without
         reaching the goal, and 86\% is the paper's open-loop CEM number; the
@@ -142,29 +159,152 @@ which also includes velocities. A successful run can therefore have a
 large state distance, so we do not use it as a difficulty measure.
 
 \subsection{Hardware and protocol}
+
+All runs used one NVIDIA RTX~5090 Laptop GPU (24\,GB). Each task is a separate
+process with \texttt{n\_evals=1}; one PointMaze run needs about 19.5\,GB of GPU
+memory, so runs are executed one after another.
+
+\subsection{Why the PointMaze protocol was corrected}
 \label{sec:seed}
 
-All runs used one NVIDIA RTX~5090 Laptop GPU (24\,GB). PointMaze and PushT
-were run as 50 separate processes with \texttt{n\_evals=1} and
-\texttt{seed}$=1,\dots,50$.
-
-\textbf{Seed caveat.} \texttt{plan.py} sets the evaluation seeds to
+\textbf{The problem.} \texttt{plan.py} sets the evaluation seeds to
 $\texttt{seed}\times n + 1$ for $n = 0,\dots,\texttt{n\_evals}-1$. With
-\texttt{n\_evals=1} this is always 1, whatever \texttt{seed} is passed. Tasks
-whose start/goal come from this seed (\emph{random state}: PointMaze, Wall)
-therefore repeat the same task in every run. PushT draws its start/goal from
-the dataset using the global seed, so its 50 runs are genuinely different
-(49 distinct start/goal pairs). The correct protocol for PointMaze and Wall
-is a single run with \texttt{n\_evals=50}, which gives 50 different
-evaluation seeds.
+\texttt{n\_evals=1}, $n$ is always 0, so the evaluation seed is 1 whatever
+\texttt{seed} is passed. PointMaze and Wall sample their start/goal from
+\texttt{RandomState(eval\_seed)}, so our first PointMaze evaluation
+(\texttt{seed}$=1,\dots,50$) ran the \emph{same} task 50 times. Its 50/50
+result measures repeatability on one task, not a 50-task success rate.
+PushT is not affected: it draws start/goal from the dataset using the global
+seed, and its 50 runs cover 49 distinct start/goal pairs.
+
+\textbf{The fix.} \texttt{plan.py} now accepts an optional
+\texttt{+eval\_seed\_override=}$i$, which gives run $i$ evaluation seed $i$.
+Without the override the original formula is used, so earlier commands behave
+exactly as before. The checkpoint, world model, CEM planner, objective and
+success criterion are unchanged. \texttt{scripts/run\_pointmaze\_corrected.sh}
+runs seeds 1--50 one after another, records each run's seed, start and goal
+state, outcome and distances, and checks that all completed runs are distinct
+tasks.
+
+\textbf{One added setting.} The original config has no MPC iteration cap
+(\texttt{max\_iter: null}), so an unsolved task re-plans until the GPU runs out
+of memory. The corrected run sets \texttt{planner.max\_iter=20}: a task not
+solved within 20 MPC iterations (500 environment actions) ends with a normal
+final evaluation and counts as a failure. Only one task reached the cap.
+
+\textbf{Checks before the full run.} Seeds 1--50 give 50 distinct start/goal
+pairs (checked directly in the environment); seed 1 is the task the old
+protocol repeated; without the override, \texttt{plan.py} still prints
+\texttt{eval\_seed: [1]} and reproduces the old task.
 
 %% ==========================================================
 \section{PointMaze Navigation}
 %% ==========================================================
 
+\subsection{Corrected evaluation: 50 distinct tasks}
+\label{sec:pm-corrected}
+
+The agent (green dot) must reach a goal position in a U-shaped maze. Run $i$
+uses evaluation seed $i$ ($i = 1,\dots,50$), and the start/goal check confirmed
+50 distinct tasks (Figure~\ref{fig:pmc-tasks}). Table~\ref{tab:pm-compare}
+compares the corrected evaluation with the earlier one.
+
 \begin{table}[H]
   \centering
-  \caption{PointMaze: 50 runs of the same start/goal pair.}
+  \caption{PointMaze: earlier evaluation (one task repeated) versus the corrected
+  evaluation (50 distinct tasks). Distances are means over all 50 runs.
+  Paper (DINO-WM, MPC): 98\%.}
+  \label{tab:pm-compare}
+  \small
+  \input{pointmaze_comparison_table.tex}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Corrected PointMaze run: MPC iterations needed per task.}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{MPC iterations} & 1 & 2 & 3 & 20 (cap, not solved) \\
+    \midrule
+    \textbf{Tasks} & 41 & 6 & 2 & 1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\linewidth]{figures/fig10_pointmaze_corrected_tasks.png}
+  \caption{The 50 start/goal pairs of the corrected evaluation. Arrows only link
+  each start to its goal; they are not the paths taken. The grey block is the
+  inner wall of the maze. The failed task (red) needs the longest detour.}
+  \label{fig:pmc-tasks}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig12_pointmaze_corrected_distance_vs_iters.png}
+  \caption{Start-to-goal distance and the number of MPC iterations used. Short
+  tasks are solved in one iteration; tasks needing re-planning are among the
+  longer ones, and the failure is the longest task of all.}
+  \label{fig:pmc-iters}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig11_pointmaze_corrected_per_task.png}
+  \caption{Final state distance per task. This distance includes velocity, so
+  it is not a success measure: the failed task's distance (4.47) is below the
+  mean of the solved tasks (4.70).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig13_pointmaze_corrected_replanning.png}
+  \caption{Solved task that needed re-planning (seed 30, three MPC iterations).
+  The full executed trajectory: real environment (top), the world model's
+  imagined frames (bottom), goal (rightmost column).}
+\end{figure}
+
+\textbf{The failed task (seed 45).} The agent starts on the right side of the
+maze at $(3.07, 1.93)$ and the goal is at $(0.63, 0.92)$ on the left. The
+straight line crosses the inner wall, so the agent must go round it, and this
+is the longest task of the 50 (Figure~\ref{fig:pmc-tasks}). After 20 MPC
+iterations (500 actions) the agent was still not within 0.5 of the goal
+(Figure~\ref{fig:pmc-fail}). Each CEM plan only looks 5 world-model steps
+(25 actions) ahead and is scored by visual distance to the goal image, which
+is a likely reason the planner did not find the long detour. Because the
+paper's configuration has no cap, it is possible that this task would
+eventually be solved without one; we count it as a failure. The same task was
+solved in 4 MPC iterations by the adaptive-CEM variant (Section~\ref{sec:acem}),
+which shows that the task is reachable within the cap, but a single task is not
+evidence that adaptive CEM plans better in general.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig14a_pointmaze_failure_first_plan.png}
+  \caption{Failed task (seed 45), first MPC iteration.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig14b_pointmaze_failure_last_frames.png}
+  \caption{Failed task (seed 45), last frames before the 20-iteration cap. The
+  agent stays at the top of the maze and does not reach the goal (rightmost column).}
+  \label{fig:pmc-fail}
+\end{figure}
+
+\subsection{Historical: earlier evaluation (one task repeated 50 times)}
+\label{sec:pm-hist}
+
+These are the results of our first PointMaze evaluation. They are kept for
+reference only and are \emph{superseded} by the corrected evaluation above,
+because every run used evaluation seed 1 and therefore the same start/goal pair
+(Section~\ref{sec:seed}).
+
+\begin{table}[H]
+  \centering
+  \caption{Historical PointMaze evaluation: 50 runs of the same start/goal pair.}
   \begin{tabular}{lccc}
     \toprule
     \textbf{Metric} & \textbf{Mean} & \textbf{Min} & \textbf{Max} \\
@@ -197,9 +337,9 @@ evaluation seeds.
 
 \textbf{Interpretation.} The planner reaches this goal every time, and the
 spread in Figure~\ref{fig:pm-spread} reflects CEM's random sampling only.
-Because all runs share one task, this does not measure the 98\% task success
-rate reported in the paper. Re-running with \texttt{n\_evals=50} is needed for
-that comparison.
+Because all runs share one task, this result shows repeatability, not the
+50-task success rate; that number comes from the corrected evaluation (98\%).
+The same task is seed 1 of the corrected run, which was also solved.
 
 %% ==========================================================
 \section{PushT Manipulation}
@@ -301,55 +441,264 @@ capped runs as failures.
 
 %% ==========================================================
 \section{Wall Navigation}
+\label{sec:wall}
 %% ==========================================================
 
-The agent (red dot) must move to a goal on the other side of a wall and pass
-through the door. We have run one test task so far, using the
-\texttt{wall\_single} checkpoint.
+The agent (red dot) must reach a goal on the other side of a vertical wall by
+passing through a door. The wall is at $x=32$ (6 units wide) and the door is
+the gap at $y = 30 \pm 4$; the arena is $64\times64$. All 50 tasks start and
+end on opposite sides of the wall, so every task requires going through the
+door. We use the \texttt{wall\_single} checkpoint.
+
+\subsection{Corrected evaluation: 50 distinct tasks}
+
+Wall samples its start/goal from \texttt{RandomState(eval\_seed)} just like
+PointMaze, so it was run with the corrected protocol
+(Section~\ref{sec:seed}): run $i$ uses evaluation seed $i$
+($i=1,\dots,50$), with the same 20-iteration MPC cap. All 50 runs completed,
+each log confirms its evaluation seed, and the 50 start/goal pairs are
+distinct (Figure~\ref{fig:wall-tasks}).
 
 \begin{table}[H]
   \centering
-  \caption{Wall test run (\texttt{seed=99}, \texttt{n\_evals=1}).}
+  \caption{Corrected Wall evaluation (50 distinct tasks). Distances are means
+  over all 50 runs. Paper (DINO-WM, MPC): 96\%.}
+  \label{tab:wall}
+  \small
   \begin{tabular}{lc}
     \toprule
-    \textbf{Metric} & \textbf{Result} \\
+    \textbf{Metric} & \textbf{Corrected (50 tasks)} \\
     \midrule
-    Success                        & Yes (1/1) \\
-    MPC iterations needed          & 1 \\
-    State distance: start $\rightarrow$ final & 25.71 $\rightarrow$ 3.41 \\
-    Final visual (DINO) distance   & 0.98 \\
-    Final proprioceptive distance  & 2.33 \\
+    Successful runs & 48/50 (96\%) \\
+    Failed tasks (eval seeds) & 13, 31 \\
+    Mean final state distance & 3.341 \\
+    Mean final visual distance & 0.790 \\
+    Mean final proprio distance & 2.141 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Corrected Wall run: MPC iterations needed per task.}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{MPC iterations} & 1 & 2 & 3 & 4 & 20 (cap, not solved) \\
+    \midrule
+    \textbf{Tasks} & 36 & 10 & 1 & 1 & 2 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig09_wall_example.png}
-  \caption{Wall test task. The agent moves down to the door, passes through
-  the wall and stops near the goal (rightmost column). Imagined (bottom) and
-  real (top) trajectories agree.}
+  \includegraphics[width=0.78\linewidth]{figures/fig19_wall_corrected_tasks.png}
+  \caption{The 50 start/goal pairs of the corrected Wall evaluation, drawn with
+  the wall (grey) and the door (gap). The $y$ axis points down, as in the
+  rendered images. Arrows only link start to goal; they are not the paths
+  taken. Both failed tasks (red) have start and goal near the bottom, far from
+  the door.}
+  \label{fig:wall-tasks}
 \end{figure}
 
-\textbf{Next step.} Run \texttt{run\_wall\_eval.sh}, which runs 50
-different tasks in one process (\texttt{n\_evals=50}, \texttt{seed=99},
-\texttt{planner.max\_iter=30}). Then rebuild the figures with
-\texttt{results/make\_figures.py} and update this section with the result.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig20_wall_corrected_path_vs_iters.png}
+  \caption{Length of the path start $\rightarrow$ door centre $\rightarrow$ goal
+  versus MPC iterations used. Tasks needing re-planning are mostly the longer
+  ones. Seed 31 has the longest path of all 50 tasks, but seed 13 ranks only
+  33rd, so path length alone does not explain its failure.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig21_wall_corrected_replanning.png}
+  \caption{Solved task with the most re-planning (seed 45, four MPC
+  iterations). The full executed trajectory: real environment (top), the world
+  model's imagined frames (bottom), goal (rightmost column).}
+\end{figure}
+
+\textbf{The failed tasks (seeds 13 and 31).} Seed 13 starts on the left at
+$(21.6, 48.0)$ with the goal on the right at $(42.7, 54.9)$; seed 31 starts on
+the right at $(55.8, 45.3)$ with the goal on the left at $(12.6, 56.0)$. In
+both, the start and goal lie 15--26 units below the door, so the agent must
+first move away from the goal to reach the door. In both runs the agent
+instead stays near the bottom and pushes against the wall below the door, and
+the state distance to the goal hardly changes over the 20 MPC iterations
+(about 15 for seed 13 and 23 for seed 31). As with PointMaze, each CEM plan
+looks only 25 actions ahead and is scored by visual distance to the goal
+image, which favours moving straight towards the goal; this is a likely, but
+untested, explanation. For seed 31, the world model's imagined frames are
+normal early in the run but become blank in the final iterations
+(Figure~\ref{fig:wall-fail}), so the model's predictions broke down while the
+agent was pressed against the wall. Two other tasks with start and goal far
+below the door (seeds 20 and 49) were solved with 2--3 iterations, so this
+layout makes tasks harder but not impossible.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig22a_wall_failure_seed13_last_frames.png}
+  \caption{Failed task seed 13, last frames before the 20-iteration cap. The
+  agent stays below the door on the left side; goal in the rightmost column.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig22b_wall_failure_seed31_last_frames.png}
+  \caption{Failed task seed 31, last frames before the cap. The agent is
+  pressed against the right side of the wall below the door, and the world
+  model's imagined frames (bottom row) have become blank.}
+  \label{fig:wall-fail}
+\end{figure}
+
+\subsection{Earlier single test task}
+
+Before the corrected run we ran one test task (\texttt{seed=99},
+\texttt{n\_evals=1}, which evaluates seed 1 because of the seed bug). It
+succeeded in one MPC iteration, reducing the state distance from 25.71 to
+3.41 (Figure~\ref{fig:wall-test}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig09_wall_example.png}
+  \caption{Wall test task. The agent moves to the door, passes through the
+  wall and stops near the goal (rightmost column). Imagined (bottom) and real
+  (top) trajectories agree.}
+  \label{fig:wall-test}
+\end{figure}
+
+%% ==========================================================
+\section{Extension: Adaptive CEM Early Stopping (PointMaze)}
+\label{sec:acem}
+%% ==========================================================
+
+\textbf{What was changed.} At inference time only, we added an optional
+convergence-based stop to the CEM planner (\texttt{planning/cem.py}). The world
+model, checkpoints and dataset are unchanged. After each CEM iteration $k$ the
+planner tracks the best cost found so far, $C_k^{\mathrm{best}}$, and its relative
+improvement
+\[
+  r_k = \frac{C_{k-1}^{\mathrm{best}} - C_k^{\mathrm{best}}}{\max\!\left(|C_{k-1}^{\mathrm{best}}|,\,\delta\right)} .
+\]
+An iteration with $r_k < \tau$ counts as a stall. Optimisation stops when
+$k \ge K_{\min}$ and there have been $P$ consecutive stalls, and the planner then
+returns the best sampled action sequence. We used $K_{\min}=3$, $\tau=0.01$,
+$P=2$ and $K_{\max}=10$. The original stop, which ends CEM as soon as the
+simulator reports success for the current mean, is kept. With the option
+disabled (the default), the planner reproduced the original results exactly
+(identical metrics on re-run tasks). A separate report,
+\texttt{extension/latex/main.pdf}, describes the method in full.
+
+\textbf{Protocol.} Both planners were run on the same 50 PointMaze tasks
+(evaluation seeds 1--50, the same start/goal pairs as the corrected
+evaluation in Section~\ref{sec:pm-corrected}), with \texttt{n\_evals=1}.
+Each method was run once per task, the order of the two methods alternated
+between tasks, and both had a 20-iteration MPC cap. Planning time is
+GPU-synchronised world-model inference plus CEM updates; it excludes the
+simulator success check, rendering and model loading. Before comparing, we
+checked that both planners received identical start/goal inputs on every task.
+As a cross-check, the original planner in this experiment reproduced the
+corrected evaluation of Section~\ref{sec:pm-corrected} exactly: the
+same success/failure and the same number of MPC iterations on all 50 tasks.
+
+\begin{table}[H]
+  \centering
+  \caption{Adaptive CEM versus the original CEM on 50 paired PointMaze tasks.
+  Intervals are 95\% bootstrap confidence intervals over tasks.}
+  \label{tab:acem}
+  \small
+  \begin{tabular}{lccl}
+    \toprule
+    \textbf{Metric} & \textbf{Original} & \textbf{Adaptive} & \textbf{Change} \\
+    \midrule
+    Successful tasks & 49/50 (98\%) & 50/50 (100\%) & +2.0 pp (McNemar $p=1.0$) \\
+    Total CEM iterations & 452 & 220 & $-51.3\%$ [11.1, 72.2] \\
+    CEM iterations per planning call & 5.72 & 3.10 & $-45.8\%$ \\
+    MPC planning calls per task & 1.58 & 1.42 & $-10.1\%$ \\
+    Candidate sequences evaluated & 135{,}600 & 66{,}000 & $-51.3\%$ \\
+    Predictor forward calls (batched) & 2{,}260 & 1{,}100 & $-51.3\%$ \\
+    Planning time per task & 42.68\,s & 20.95\,s & $-50.9\%$ [10.9, 71.9] \\
+    Total planning time & 2133.9\,s & 1047.7\,s & $-50.9\%$ \\
+    Mean final state distance & 4.700 & 4.551 & $-0.149$ \\
+    CEM stops: success / converged / max & 49 / 0 / 30 & 50 / 20 / 1 & \\
+    \midrule
+    \multicolumn{4}{l}{\textit{Excluding the capped task (seed 45), 49 tasks:}} \\
+    Total CEM iterations & & & $-20.6\%$ [8.1, 31.4] \\
+    Total planning time & & & $-20.3\%$ [7.8, 31.0] \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Results.}
+\begin{itemize}
+  \item \textbf{Computation fell by about half, but one task accounts for most
+        of it.} On seed 45 the original planner failed at the 20-iteration MPC
+        cap (200 CEM iterations, 938\,s of planning), while the adaptive
+        planner solved it in 4 MPC iterations (20 CEM iterations, 94\,s).
+        Without that task, the reduction is about 20\%, and its confidence
+        interval still excludes zero.
+  \item \textbf{39 of the 50 tasks were unaffected.} On these tasks the
+        original simulator success check ended CEM before the convergence rule
+        could act, so both planners did identical work. Adaptive used fewer CEM
+        iterations on 9 tasks and more on 2. The median per-task change in
+        planning time is zero.
+  \item \textbf{Earlier stopping sometimes led to more re-planning.} Seven tasks
+        needed extra MPC iterations with adaptive CEM; this cost is included in
+        all the totals above.
+  \item \textbf{Success was maintained, not shown to improve.} The only
+        difference is seed 45. One task in 50 is not statistically significant
+        (McNemar $p=1.0$).
+  \item \textbf{The rule costs almost nothing per iteration} (4.72\,s versus
+        4.76\,s per CEM iteration, original versus adaptive).
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig15_adaptive_cem_iterations.png}
+  \caption{Total CEM iterations over all 50 tasks (left) and average CEM
+  iterations per planning call (right). Totals include all MPC re-planning calls.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig16_adaptive_cem_planning_time.png}
+  \caption{Planning time per task, original versus adaptive (log scale). Points
+  on the diagonal are tasks with identical work; the far outlier is seed 45.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig17_adaptive_cem_per_task_iterations.png}
+  \caption{Total CEM iterations per task for both planners (log scale).}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig18_adaptive_cem_convergence_example.png}
+  \caption{Example planning call: best cost per CEM iteration and the point at
+  which the convergence rule stopped optimisation.}
+\end{figure}
 
 %% ==========================================================
 \section{Limitations and Next Steps}
 %% ==========================================================
 
 \begin{enumerate}
-  \item \textbf{PointMaze must be re-run} with \texttt{n\_evals=50} to measure
-        a real 50-task success rate.
-  \item \textbf{Wall 50-task evaluation} is still to be run.
+  \item \textbf{Wall and PointMaze iteration caps.} Both corrected runs cap
+        MPC at 20 iterations; the paper's config has no cap, so the capped
+        tasks (PointMaze seed 45, Wall seeds 13 and 31) might be solved with
+        more iterations.
+  \item \textbf{PointMaze iteration cap.} The corrected run caps MPC at 20
+        iterations while the paper's config has no cap; the one capped task
+        (seed 45) might be solved with more iterations. Our tasks are seeds
+        1--50, not necessarily the paper's 50 tasks.
   \item \textbf{PushT tasks differ from the paper's.} Start/goal pairs come
         from our seeds, and with 50 tasks one failure moves the success rate
         by 2 points, so 96\% versus 90\% is within the expected variation.
-  \item \textbf{Iteration cap.} Unsolved tasks run until they crash. Future
-        runs should set an iteration cap
-        (\texttt{planner.max\_iter}) so failures are recorded cleanly.
+  \item \textbf{PushT iteration cap.} PushT was run without a cap, so its two
+        unsolved tasks ran until they crashed. Future runs should set
+        \texttt{planner.max\_iter} so failures are recorded cleanly.
 \end{enumerate}
 
 %% ==========================================================
@@ -370,18 +719,42 @@ this report are written to \texttt{results/summary.json}.
     \textbf{File} & \textbf{Content} \\
     \midrule
     \fig{fig01\_success\_vs\_paper.png} & Success rate per task vs paper \\
-    \fig{fig02\_pointmaze\_example.png} & PointMaze real vs imagined rollout \\
-    \fig{fig03\_pointmaze\_repeat\_spread.png} & PointMaze spread over 50 repeats \\
+    \fig{fig02\_pointmaze\_example.png} & PointMaze real vs imagined rollout (seed 1) \\
+    \fig{fig03\_pointmaze\_repeat\_spread.png} & PointMaze spread over 50 repeats (historical) \\
     \fig{fig04\_pusht\_difficulty\_vs\_outcome.png} & PushT initial offset vs outcome \\
     \fig{fig05\_pusht\_easy.png} & PushT easy example (run 40) \\
     \fig{fig06\_pusht\_medium.png} & PushT median example (run 42) \\
     \fig{fig07\_pusht\_hard.png} & PushT hardest example (run 44) \\
     \fig{fig08a\_pusht\_failure\_first\_plan.png} & PushT failure, first plan (run 2) \\
     \fig{fig08b\_pusht\_failure\_last\_frames.png} & PushT failure, model drift (run 2) \\
-    \fig{fig09\_wall\_example.png} & Wall test task \\
+    \fig{fig09\_wall\_example.png} & Wall single test task (earlier) \\
+    \fig{fig10\_pointmaze\_corrected\_tasks.png} & PointMaze: the 50 corrected start/goal pairs \\
+    \fig{fig11\_pointmaze\_corrected\_per\_task.png} & PointMaze: final state distance per task \\
+    \fig{fig12\_pointmaze\_corrected\_distance\_vs\_iters.png} & PointMaze: task length vs MPC iterations \\
+    \fig{fig13\_pointmaze\_corrected\_replanning.png} & PointMaze: solved with re-planning (seed 30) \\
+    \fig{fig14a\_pointmaze\_failure\_first\_plan.png} & PointMaze failure, first plan (seed 45) \\
+    \fig{fig14b\_pointmaze\_failure\_last\_frames.png} & PointMaze failure, last frames (seed 45) \\
+    \fig{fig15\_adaptive\_cem\_iterations.png} & Adaptive CEM: iterations per planning call \\
+    \fig{fig16\_adaptive\_cem\_planning\_time.png} & Adaptive CEM: planning time per task, paired \\
+    \fig{fig17\_adaptive\_cem\_per\_task\_iterations.png} & Adaptive CEM: CEM iterations per task \\
+    \fig{fig18\_adaptive\_cem\_convergence\_example.png} & Adaptive CEM: convergence stop example \\
+    \fig{fig19\_wall\_corrected\_tasks.png} & Wall: the 50 corrected start/goal pairs with wall and door \\
+    \fig{fig20\_wall\_corrected\_path\_vs\_iters.png} & Wall: path length via door vs MPC iterations \\
+    \fig{fig21\_wall\_corrected\_replanning.png} & Wall: solved with re-planning (seed 45) \\
+    \fig{fig22a\_wall\_failure\_seed13\_last\_frames.png} & Wall failure, last frames (seed 13) \\
+    \fig{fig22b\_wall\_failure\_seed31\_last\_frames.png} & Wall failure, last frames (seed 31) \\
     \midrule
-    \texttt{\small figures/videos/*.mp4} & \raggedright Videos: pointmaze\_example, pusht\_easy,
-      pusht\_medium, pusht\_hard, pusht\_failure\_first\_plan, wall\_example \tabularnewline
+    \texttt{\small figures/videos/*.mp4} & \raggedright Videos: pointmaze\_example,
+      pointmaze\_corrected\_replanning, pointmaze\_failure, pusht\_easy,
+      pusht\_medium, pusht\_hard, pusht\_failure\_first\_plan, wall\_example,
+      wall\_corrected\_replanning, wall\_failure\_seed13, wall\_failure\_seed31 \tabularnewline
+    \midrule
+    \texttt{\small pointmaze\_corrected\_per\_run.csv} & \raggedright Per-task seed, outcome,
+      distances, start and goal state \tabularnewline
+    \texttt{\small wall\_corrected\_per\_run.csv} & \raggedright Same, for the corrected Wall
+      evaluation \tabularnewline
+    \texttt{\small adaptive\_cem\_comparison\_summary.csv} & \raggedright Adaptive versus
+      original CEM summary; per-task CSVs are in the adaptive-CEM experiment folder \tabularnewline
     \bottomrule
   \end{tabularx}
 \end{table}

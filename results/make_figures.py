@@ -170,3 +170,208 @@ vid(wl[0]["dir"], "plan0_0_*.mp4", "wall_example.mp4")
 
 json.dump(summary, open(os.path.join(ROOT, "results", "summary.json"), "w"), indent=1, default=float)
 print(json.dumps(summary, indent=1, default=float))
+
+
+# =====================================================================================
+# Corrected PointMaze evaluation (50 distinct tasks, scripts/run_pointmaze_corrected.sh)
+# =====================================================================================
+import csv
+PMC = f"{ROOT}/experiments/pointmaze_corrected"
+if os.path.exists(f"{PMC}/results/summary.json"):
+    rows = list(csv.DictReader(open(f"{PMC}/results/per_run.csv")))
+    for r in rows:
+        r["seed"] = int(r["eval_seed"]); r["ok"] = r["success"] == "True"; r["iters"] = int(r["mpc_iterations"])
+        s0 = np.array(r["initial_state"].split(), float); sg = np.array(r["goal_state"].split(), float)
+        r["xy_dist"] = float(np.linalg.norm(s0[:2] - sg[:2]))
+    agg = json.load(open(f"{PMC}/results/summary.json"))
+    okr = [r for r in rows if r["ok"]]; bad = [r for r in rows if not r["ok"]]
+    summary["pointmaze_corrected"] = dict(
+        agg["corrected"], failed_seeds=agg["failed_seeds"],
+        mpc_iters_hist={k: sum(r["iters"] == k for r in rows) for k in sorted({r["iters"] for r in rows})},
+        start_goal_xy_dist=dict(min=min(r["xy_dist"] for r in rows), median=float(np.median([r["xy_dist"] for r in rows])),
+                                max=max(r["xy_dist"] for r in rows)),
+        state_dist_successes=dict(median=float(np.median([float(r["final_state_dist"]) for r in okr])),
+                                  min=min(float(r["final_state_dist"]) for r in okr),
+                                  max=max(float(r["final_state_dist"]) for r in okr)))
+
+    # Fig 1 again, now with the corrected PointMaze number
+    ours["PointMaze"] = agg["corrected"]["success_rate"]
+    notes["PointMaze"] = f"{agg['corrected']['successes']}/50\ntasks"
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    b1 = ax.bar(x - w / 2 - 0.01, [ours[e] * 100 for e in envs], w, color=BLUE, label="Our reproduction")
+    b2 = ax.bar(x + w / 2 + 0.01, [PAPER[e] * 100 for e in envs], w, color=ORANGE, label="DINO-WM paper (MPC)")
+    for bars in (b1, b2):
+        for b in bars:
+            ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 1.5, f"{b.get_height():.0f}%",
+                    ha="center", va="bottom", fontsize=10, color=INK)
+    for i, e in enumerate(envs):
+        ax.text(i - w / 2, 4, notes[e], ha="center", va="bottom", fontsize=8.5, color="white")
+    ax.set_xticks(x, envs); ax.set_ylim(0, 115); ax.set_ylabel("Success rate (%)")
+    ax.set_yticks([0, 25, 50, 75, 100]); ax.grid(axis="x", visible=False)
+    ax.legend(frameon=False, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.12))
+    fig.savefig(f"{FIG}/fig01_success_vs_paper.png"); plt.close(fig)
+
+    # Fig 10: task layout (made by scripts/eval_records.py aggregate)
+    copy(f"{PMC}/figures/task_layout.png", "fig10_pointmaze_corrected_tasks.png")
+
+    # Fig 11: final state distance per task
+    fig, ax = plt.subplots(figsize=(7.5, 3.6))
+    ax.bar([r["seed"] for r in okr], [float(r["final_state_dist"]) for r in okr], width=0.8, color=BLUE,
+           label=f"Solved ({len(okr)})")
+    ax.bar([r["seed"] for r in bad], [float(r["final_state_dist"]) for r in bad], width=0.8, color=CRIT,
+           label=f"Not solved within {bad[0]['iters'] if bad else 20} MPC iterations ({len(bad)})")
+    ax.set_xlabel("Evaluation seed (task)"); ax.set_ylabel("Final state distance")
+    ax.set_xlim(0, 51); ax.grid(axis="x", visible=False)
+    ax.legend(frameon=False, loc="upper left", fontsize=9)
+    fig.savefig(f"{FIG}/fig11_pointmaze_corrected_per_task.png"); plt.close(fig)
+
+    # Fig 12: start-goal distance vs MPC iterations needed
+    fig, ax = plt.subplots(figsize=(7.5, 4.0))
+    ax.scatter([r["xy_dist"] for r in okr], [r["iters"] for r in okr], s=46, color=GOOD, edgecolor="white",
+               linewidth=1.5, label=f"Solved ({len(okr)})", zorder=3)
+    ax.scatter([r["xy_dist"] for r in bad], [r["iters"] for r in bad], s=110, color=CRIT, marker="X",
+               edgecolor="white", linewidth=1.5, label=f"Not solved, stopped at the cap ({len(bad)})", zorder=4)
+    for r in bad:
+        ax.annotate(f"seed {r['seed']}", (r["xy_dist"], r["iters"]), xytext=(-12, -16),
+                    textcoords="offset points", fontsize=9, color=INK, ha="right")
+    ax.set_xlabel("Straight-line start-to-goal distance (x, y)"); ax.set_ylabel("MPC iterations used")
+    ax.set_yticks([1, 2, 3, 5, 10, 15, 20]); ax.set_ylim(0, 22)
+    ax.legend(frameon=False, loc="upper left")
+    fig.savefig(f"{FIG}/fig12_pointmaze_corrected_distance_vs_iters.png"); plt.close(fig)
+
+    # Fig 13: a solved task that needed re-planning (most MPC iterations among successes)
+    rep = max(okr, key=lambda r: (r["iters"], r["xy_dist"]))
+    copy(f"{ROOT}/{rep['output_dir']}/output_final.png", "fig13_pointmaze_corrected_replanning.png")
+    vid(f"{ROOT}/{rep['output_dir']}", "output_final_0_*.mp4", "pointmaze_corrected_replanning.mp4")
+    summary["pointmaze_corrected"]["example_replanning"] = dict(seed=rep["seed"], iters=rep["iters"], xy_dist=rep["xy_dist"])
+
+    # Fig 14a/b: the failed task, first plan and last frames
+    if bad:
+        fb = bad[0]; d = f"{ROOT}/{fb['output_dir']}"
+        copy(f"{d}/plan0.png", "fig14a_pointmaze_failure_first_plan.png")
+        im = Image.open(f"{d}/output_final.png"); W, H = im.size
+        im.crop((W - 1584, 0, W, H)).save(f"{FIG}/fig14b_pointmaze_failure_last_frames.png")
+        vid(d, "output_final_0_*.mp4", "pointmaze_failure.mp4")
+        summary["pointmaze_corrected"]["example_failure"] = dict(seed=fb["seed"], iters=fb["iters"], xy_dist=fb["xy_dist"],
+                                                                 initial_state=fb["initial_state"], goal_state=fb["goal_state"])
+
+    shutil.copy(f"{PMC}/results/comparison_table.tex", f"{ROOT}/results/pointmaze_comparison_table.tex")
+    shutil.copy(f"{PMC}/results/per_run.csv", f"{ROOT}/results/pointmaze_corrected_per_run.csv")
+    json.dump(summary, open(os.path.join(ROOT, "results", "summary.json"), "w"), indent=1, default=float)
+    print(json.dumps(summary["pointmaze_corrected"], indent=1, default=float))
+
+
+# ---------------- Adaptive CEM extension (experiments/adaptive_cem) ----------------
+# Figures are produced by experiments/adaptive_cem/scripts/aggregate.py; copied here
+# so all report figures live in results/figures/.
+ACEM = f"{ROOT}/experiments/adaptive_cem"
+if os.path.exists(f"{ACEM}/results/comparison_summary.json"):
+    for src, dst in [("cem_iterations_comparison.png", "fig15_adaptive_cem_iterations.png"),
+                     ("planning_time_comparison.png", "fig16_adaptive_cem_planning_time.png"),
+                     ("per_task_iterations.png", "fig17_adaptive_cem_per_task_iterations.png"),
+                     ("convergence_example.png", "fig18_adaptive_cem_convergence_example.png")]:
+        copy(f"{ACEM}/figures/{src}", dst)
+    shutil.copy(f"{ACEM}/results/comparison_summary.csv", f"{ROOT}/results/adaptive_cem_comparison_summary.csv")
+    acs = json.load(open(f"{ACEM}/results/comparison_summary.json"))
+    summary = json.load(open(os.path.join(ROOT, "results", "summary.json")))
+    summary["adaptive_cem"] = {k: acs[k] for k in ("n_paired_tasks", "original", "adaptive", "reductions_pct",
+                               "bootstrap_95ci", "sensitivity_excluding_mpc_cap_tasks", "change", "paired_stats")}
+    json.dump(summary, open(os.path.join(ROOT, "results", "summary.json"), "w"), indent=1, default=float)
+    print("adaptive CEM figures copied (fig15-fig18)")
+
+
+# ---------------- Corrected Wall evaluation (50 distinct tasks, experiments/wall_corrected) ----------------
+WC = f"{ROOT}/experiments/wall_corrected"
+WALL_X, DOOR_Y, DOOR_HALF, WALL_W = 32, 30, 4, 6  # env/wall: fix_wall_location, hole_y, door_space, wall_width
+if os.path.exists(f"{WC}/results/summary.json"):
+    import csv
+    from matplotlib.patches import Rectangle
+    summary = json.load(open(os.path.join(ROOT, "results", "summary.json")))
+    wagg = json.load(open(f"{WC}/results/summary.json"))
+    wrows = list(csv.DictReader(open(f"{WC}/results/per_run.csv")))
+    for r in wrows:
+        r["seed"] = int(r["eval_seed"]); r["ok"] = r["success"] == "True"; r["iters"] = int(r["mpc_iterations"])
+        r["s0"] = np.array(r["initial_state"].split(), float); r["sg"] = np.array(r["goal_state"].split(), float)
+        door = np.array([WALL_X, DOOR_Y], float)
+        r["via_door"] = float(np.linalg.norm(r["s0"][:2] - door) + np.linalg.norm(door - r["sg"][:2]))
+    wok = [r for r in wrows if r["ok"]]; wbad = [r for r in wrows if not r["ok"]]
+    by_via = sorted(wrows, key=lambda r: r["via_door"])
+    summary["wall_corrected"] = dict(
+        wagg["corrected"], failed_seeds=wagg["failed_seeds"],
+        mpc_iters_hist={k: sum(r["iters"] == k for r in wrows) for k in sorted({r["iters"] for r in wrows})},
+        tasks_crossing_wall=int(sum((r["s0"][0] - WALL_X) * (r["sg"][0] - WALL_X) < 0 for r in wrows)),
+        via_door_path=dict(min=by_via[0]["via_door"], median=float(np.median([r["via_door"] for r in wrows])),
+                           max=by_via[-1]["via_door"]),
+        failed_via_door_rank={r["seed"]: by_via.index(r) + 1 for r in wbad})
+
+    # Fig 1 again, now with the corrected Wall number
+    ours["Wall"] = wagg["corrected"]["success_rate"]
+    notes["Wall"] = f"{wagg['corrected']['successes']}/50\ntasks"
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
+    b1 = ax.bar(x - w / 2 - 0.01, [ours[e] * 100 for e in envs], w, color=BLUE, label="Our reproduction")
+    b2 = ax.bar(x + w / 2 + 0.01, [PAPER[e] * 100 for e in envs], w, color=ORANGE, label="DINO-WM paper (MPC)")
+    for bars in (b1, b2):
+        for b in bars:
+            ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 1.5, f"{b.get_height():.0f}%",
+                    ha="center", va="bottom", fontsize=10, color=INK)
+    for i, e in enumerate(envs):
+        ax.text(i - w / 2, 4, notes[e], ha="center", va="bottom", fontsize=8.5, color="white")
+    ax.set_xticks(x, envs); ax.set_ylim(0, 115); ax.set_ylabel("Success rate (%)")
+    ax.set_yticks([0, 25, 50, 75, 100]); ax.grid(axis="x", visible=False)
+    ax.legend(frameon=False, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.12))
+    fig.savefig(f"{FIG}/fig01_success_vs_paper.png"); plt.close(fig)
+
+    # Fig 19: task layout with the wall and door drawn (y axis down, as in the rendered images)
+    fig, ax = plt.subplots(figsize=(6.4, 6.0))
+    ax.add_patch(Rectangle((WALL_X - WALL_W / 2, 0), WALL_W, DOOR_Y - DOOR_HALF, color="#9a9994", zorder=1))
+    ax.add_patch(Rectangle((WALL_X - WALL_W / 2, DOOR_Y + DOOR_HALF), WALL_W, 64 - DOOR_Y - DOOR_HALF,
+                           color="#9a9994", zorder=1, label="Wall (gap = door)"))
+    for r in wrows:
+        c = GOOD if r["ok"] else CRIT
+        ax.annotate("", xy=r["sg"][:2], xytext=r["s0"][:2],
+                    arrowprops=dict(arrowstyle="->", color=c, lw=2.0 if not r["ok"] else 1.0,
+                                    alpha=1 if not r["ok"] else 0.55), zorder=2 if r["ok"] else 4)
+    ax.scatter([r["s0"][0] for r in wrows], [r["s0"][1] for r in wrows], s=26, color=BLUE, edgecolor="white",
+               linewidth=1, zorder=5, label="Start")
+    ax.scatter([r["sg"][0] for r in wrows], [r["sg"][1] for r in wrows], s=60, marker="*", color=BLUE,
+               edgecolor="white", linewidth=0.6, zorder=5, label="Goal")
+    for r in wbad:
+        ax.annotate(f"seed {r['seed']}", r["s0"][:2], xytext=(4, -16), textcoords="offset points",
+                    fontsize=9, color=INK, ha="center", fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.15", fc=SURF, ec="none", alpha=0.85), zorder=6)
+    ax.plot([], [], color=GOOD, label="Task solved"); ax.plot([], [], color=CRIT, lw=2, label="Task failed")
+    ax.set_xlim(0, 64); ax.set_ylim(64, 0); ax.set_aspect("equal"); ax.grid(False)
+    ax.set_xlabel("x"); ax.set_ylabel("y (down, as in the rendered images)")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=9)
+    fig.savefig(f"{FIG}/fig19_wall_corrected_tasks.png"); plt.close(fig)
+
+    # Fig 20: shortest path through the door vs MPC iterations
+    fig, ax = plt.subplots(figsize=(7.5, 4.0))
+    ax.scatter([r["via_door"] for r in wok], [r["iters"] for r in wok], s=46, color=GOOD, edgecolor="white",
+               linewidth=1.5, label=f"Solved ({len(wok)})", zorder=3)
+    ax.scatter([r["via_door"] for r in wbad], [r["iters"] for r in wbad], s=110, color=CRIT, marker="X",
+               edgecolor="white", linewidth=1.5, label=f"Not solved, stopped at the cap ({len(wbad)})", zorder=4)
+    for r in wbad:
+        ax.annotate(f"seed {r['seed']}", (r["via_door"], r["iters"]), xytext=(-12, -16),
+                    textcoords="offset points", fontsize=9, color=INK, ha="right")
+    ax.set_xlabel("Path length start → door centre → goal (straight segments)"); ax.set_ylabel("MPC iterations used")
+    ax.set_yticks([1, 2, 3, 4, 5, 10, 15, 20]); ax.set_ylim(0, 22)
+    ax.legend(frameon=False, loc="center left")
+    fig.savefig(f"{FIG}/fig20_wall_corrected_path_vs_iters.png"); plt.close(fig)
+
+    # Fig 21: solved task with the most re-planning
+    wrep = max(wok, key=lambda r: (r["iters"], r["via_door"]))
+    copy(f"{ROOT}/{wrep['output_dir']}/output_final.png", "fig21_wall_corrected_replanning.png")
+    vid(f"{ROOT}/{wrep['output_dir']}", "output_final_0_*.mp4", "wall_corrected_replanning.mp4")
+    summary["wall_corrected"]["example_replanning"] = dict(seed=wrep["seed"], iters=wrep["iters"], via_door=wrep["via_door"])
+
+    # Fig 22a/b: last frames of each failed task
+    for tag, r in zip("ab", sorted(wbad, key=lambda r: r["seed"])):
+        im = Image.open(f"{ROOT}/{r['output_dir']}/output_final.png"); W, H = im.size
+        im.crop((W - 1584, 0, W, H)).save(f"{FIG}/fig22{tag}_wall_failure_seed{r['seed']:02d}_last_frames.png")
+        vid(f"{ROOT}/{r['output_dir']}", "output_final_0_*.mp4", f"wall_failure_seed{r['seed']:02d}.mp4")
+
+    shutil.copy(f"{WC}/results/comparison_table.tex", f"{ROOT}/results/wall_comparison_table.tex")
+    shutil.copy(f"{WC}/results/per_run.csv", f"{ROOT}/results/wall_corrected_per_run.csv")
+    json.dump(summary, open(os.path.join(ROOT, "results", "summary.json"), "w"), indent=1, default=float)
+    print(json.dumps({k: v for k, v in summary["wall_corrected"].items()}, indent=1, default=float))

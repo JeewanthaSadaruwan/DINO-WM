@@ -1,0 +1,16 @@
+- model_name=point_maze
+- model_epoch=latest
+- n_evals=1
+- n_plot_samples=1
+- goal_source=file
+- planner.sub_planner.num_samples=300
+- planner.sub_planner.topk=30
+- planner.sub_planner.horizon=5
+- planner.sub_planner.opt_steps=10
+- planner.sub_planner.eval_every=1
+- planner.sub_planner.stats_filename=cem_calls.jsonl
+- planner.sub_planner.adaptive_cem.enabled=false
+- ckpt_base_path=/home/nilesh/jeewan_space/dino_wm/checkpoints
+- +goal_file_path=/home/nilesh/jeewan_space/dino_wm/experiments/adaptive_cem/configs/tasks/task_27.pkl
+- seed=27
+- planner.max_iter=20

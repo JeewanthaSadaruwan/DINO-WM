@@ -1,0 +1,14 @@
+# Applied identically to BOTH methods (see scripts/run_one.sh).
+# Planner size is the unchanged PointMaze default: 300 samples, 30 elites,
+# horizon 5, max 10 CEM iterations, eval_every 1 (success-based stop).
+model_name=point_maze
+model_epoch=latest
+n_evals=1
+n_plot_samples=1
+goal_source=file
+planner.sub_planner.num_samples=300
+planner.sub_planner.topk=30
+planner.sub_planner.horizon=5
+planner.sub_planner.opt_steps=10
+planner.sub_planner.eval_every=1
+planner.sub_planner.stats_filename=cem_calls.jsonl

@@ -1,0 +1,227 @@
+{
+ "run": 2,
+ "source": {
+  "run": 2,
+  "log": "evaluation_logs/pusht/eval_2.log",
+  "dir": "/home/nilesh/jeewan_space/dino_wm/plan_outputs/20261122225854_pusht_gH5",
+  "overrides": "['model_name=pusht', 'ckpt_base_path=/home/nilesh/jeewan_space/dino_wm/checkpoints', 'n_evals=1', 'n_plot_samples=1', 'seed=2']",
+  "seed_arg": 2,
+  "eval_seed": "[1]",
+  "mpc_eval_started": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22,
+   23,
+   24,
+   25,
+   26,
+   27,
+   28,
+   29,
+   30,
+   31,
+   32,
+   33,
+   34,
+   35,
+   36,
+   37,
+   38,
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45,
+   46,
+   47,
+   48,
+   49,
+   50,
+   51,
+   52,
+   53,
+   54,
+   55,
+   56,
+   57,
+   58,
+   59,
+   60,
+   61,
+   62,
+   63,
+   64,
+   65,
+   66,
+   67,
+   68
+  ],
+  "oom": "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.11 GiB. GPU 0 has a total capacity of 23.42 GiB of which 1.72 GiB is free. Including non-PyTorch memory, this process has 21.67 GiB memory in use. Of the allocated memory 12.52 GiB is allocated by PyTorch, and 8.85 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+  "oom_stack": [
+   "../../miniforge3/envs/dino_wm/lib/python3.10/site-packages/torch/nn/modules/module.py:1779 _wrapped_call_impl",
+   "../../miniforge3/envs/dino_wm/lib/python3.10/site-packages/torch/nn/modules/module.py:1790 _call_impl",
+   "../../miniforge3/envs/dino_wm/lib/python3.10/site-packages/torch/nn/modules/container.py:253 forward",
+   "../../miniforge3/envs/dino_wm/lib/python3.10/site-packages/torch/nn/modules/module.py:1779 _wrapped_call_impl",
+   "../../miniforge3/envs/dino_wm/lib/python3.10/site-packages/torch/nn/modules/module.py:1790 _call_impl",
+   "../../miniforge3/envs/dino_wm/lib/python3.10/site-packages/torch/nn/modules/conv.py:1186 forward"
+  ]
+ },
+ "output_dir": "plan_outputs/20261122225854_pusht_gH5",
+ "files_used": {
+  "actual_continuous": "plan_outputs/20261122225854_pusht_gH5/plan67_0_failure.mp4 (top-left quadrant, undarkened)",
+  "openloop_prediction": "plan_outputs/20261122225854_pusht_gH5/plan67_0_failure.mp4 (bottom-left quadrant)",
+  "per_iteration": "plan_K_output_30.png, K=0..68",
+  "goal": "plan_targets.pkl obs_g (clean)"
+ },
+ "initial_state": [
+  365.94378662109375,
+  259.3235778808594,
+  293.19305419921875,
+  386.703125,
+  2.8207132816314697,
+  157.3507080078125,
+  168.524169921875
+ ],
+ "goal_state": [
+  316.9300842285156,
+  292.2608642578125,
+  285.8040466308594,
+  324.15997314453125,
+  2.0086236000061035,
+  -119.93590545654297,
+  -97.68390655517578
+ ],
+ "mpc": {
+  "completed_iterations": 68,
+  "planned_iterations": 69,
+  "cem_steps_per_iteration": [
+   30
+  ],
+  "executed_actions": 1700,
+  "final_recorded": {
+   "after_iteration": 67,
+   "state_dist": 64.64453125,
+   "visual_dist": 5.717268548044218,
+   "proprio_dist": 5.286111831665039,
+   "success": false
+  },
+  "termination": "CUDA out of memory in MPC iteration 68's evaluation, while decoding the open-loop visualisation of all 345 world-model steps (planning/evaluator.py:132 -> models/visual_world_model.py decode_obs -> models/vqvae.py decode)",
+  "oom_message": "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.11 GiB. GPU 0 has a total capacity of 23.42 GiB of which 1.72 GiB is free. Including non-PyTorch memory, this process has 21.67 GiB memory in use. Of the allocated memory 12.52 GiB is allocated by PyTorch, and 8.85 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)"
+ },
+ "estimates": {
+  "note": "block pose and agent position estimated from images (scripts/pusht_pose.py); world units = env pixels (512 frame)",
+  "estimator_validation_on_goal_image": {
+   "block_pos_err": 0.4451111218220013,
+   "block_ang_err_deg": 0.0856549107233969,
+   "agent_pos_err": 1.8453989541409572
+  },
+  "start": {
+   "block_goal_dist": 62.978118896484375,
+   "block_goal_ang": 46.529311343256204,
+   "agent_goal_dist": 59.05258560180664
+  },
+  "end": {
+   "block_goal_dist": 64.4447254620765,
+   "block_goal_ang": 33.24999999999999,
+   "agent_goal_dist": 8.47590251471398
+  },
+  "closest_block": {
+   "iter": 5,
+   "block_goal_dist": 62.38857109962188,
+   "block_goal_ang": 40.99999999999999
+  },
+  "last_iteration_block_moved": 59,
+  "iterations_block_still": 58,
+  "iterations_with_contact": 52,
+  "per_iteration_prediction": {
+   "threshold": {
+    "block_pos": 10.0,
+    "block_ang_deg": 5.0,
+    "agent": 10.0
+   },
+   "mean_err_block_pos": 1.9556488339488587,
+   "max_err_block_pos": 5.1584155556291975,
+   "max_err_block_ang": 3.7499999999999956,
+   "max_err_agent": 10.292989558792502,
+   "divergent_iterations": [
+    2
+   ],
+   "first_divergent_iteration": 2
+  },
+  "openloop_from_start": {
+   "first_divergent_action": 30,
+   "err_block_pos_at_end": 45.474736022026605,
+   "pred_iou_at_end": 0.6405005688282139
+  },
+  "sync_check": {
+   "max_block_pos_diff": 2.0835083946756012,
+   "max_agent_diff": 2.6180616319400203,
+   "note": "continuous replay (planK mp4) vs CEM-evaluator rollout of the same plan at actions 0 and 25 of each iteration"
+  }
+ },
+ "first_visible_divergence": "per-iteration prediction, MPC iteration 2: agent position error 10.3 (threshold 10)",
+ "videos": {
+  "actual_simulation": {
+   "frames": 1701,
+   "fps": 20.0,
+   "size": [
+    448,
+    528
+   ],
+   "seconds": 85.0,
+   "frame_count_ok": true
+  },
+  "predicted_rollout": {
+   "frames": 1794,
+   "fps": 20.0,
+   "size": [
+    448,
+    560
+   ],
+   "seconds": 89.7,
+   "frame_count_ok": true
+  },
+  "actual_vs_predicted": {
+   "frames": 1768,
+   "fps": 20.0,
+   "size": [
+    1376,
+    560
+   ],
+   "seconds": 88.4,
+   "frame_count_ok": true
+  },
+  "actual_vs_openloop_prediction": {
+   "frames": 1701,
+   "fps": 20.0,
+   "size": [
+    1376,
+    560
+   ],
+   "seconds": 85.0,
+   "frame_count_ok": true
+  }
+ }
+}

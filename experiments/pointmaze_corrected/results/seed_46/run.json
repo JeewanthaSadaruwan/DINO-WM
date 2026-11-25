@@ -1,0 +1,33 @@
+{
+ "eval_seed": 46,
+ "printed_eval_seed": [
+  46
+ ],
+ "global_seed": 46,
+ "status": "success",
+ "complete": true,
+ "exit_code": 0,
+ "timed_out": false,
+ "success": true,
+ "final_state_dist": 5.505438880284575,
+ "final_visual_dist": 0.46364131590136054,
+ "final_proprio_dist": 1.508495569229126,
+ "mpc_iterations": 1,
+ "max_mpc_iters": 20,
+ "initial_state": [
+  2.5379641120949517,
+  2.150567635737098,
+  -2.6231297962662468,
+  2.697540762471558
+ ],
+ "goal_state": [
+  1.3140000326423675,
+  2.9368171294698335,
+  -4.77820383815112,
+  -0.6180861947841718
+ ],
+ "output_dir": "experiments/pointmaze_corrected/results/seed_46",
+ "stdout_log": "experiments/pointmaze_corrected/logs/seed_46.log",
+ "wall_time_s": 51.001466275,
+ "recorded_at": "2026-11-25T19:34:27"
+}

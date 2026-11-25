@@ -1,0 +1,29 @@
+{
+ "eval_seed": 36,
+ "printed_eval_seed": [
+  36
+ ],
+ "global_seed": 36,
+ "status": "success",
+ "complete": true,
+ "exit_code": 0,
+ "timed_out": false,
+ "success": true,
+ "final_state_dist": 3.1034379208922425,
+ "final_visual_dist": 0.9683405160903931,
+ "final_proprio_dist": 1.904158592224121,
+ "mpc_iterations": 1,
+ "max_mpc_iters": 20,
+ "initial_state": [
+  20.658830887042207,
+  54.24728883637587
+ ],
+ "goal_state": [
+  49.349378665137884,
+  14.444133627874699
+ ],
+ "output_dir": "experiments/wall_corrected/results/seed_36",
+ "stdout_log": "experiments/wall_corrected/logs/seed_36.log",
+ "wall_time_s": 21.189046996,
+ "recorded_at": "2026-11-25T20:30:14"
+}

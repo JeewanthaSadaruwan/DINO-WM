@@ -1,0 +1,8 @@
+{
+  "method": "baseline",
+  "task": 1,
+  "exit_code": 0,
+  "timed_out": false,
+  "process_wall_time_s": 14.192713737487793,
+  "max_mpc_steps": 20
+}

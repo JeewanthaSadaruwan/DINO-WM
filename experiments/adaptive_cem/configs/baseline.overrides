@@ -1,0 +1,2 @@
+# Baseline CEM: original DINO-WM planner (adaptive stopping disabled).
+planner.sub_planner.adaptive_cem.enabled=false

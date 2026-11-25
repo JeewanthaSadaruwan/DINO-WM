@@ -1,0 +1,6 @@
+# Adaptive CEM: original planner + convergence-based early stopping.
+planner.sub_planner.adaptive_cem.enabled=true
+planner.sub_planner.adaptive_cem.min_iterations=3
+planner.sub_planner.adaptive_cem.relative_tolerance=0.01
+planner.sub_planner.adaptive_cem.patience=2
+planner.sub_planner.adaptive_cem.return_best=true

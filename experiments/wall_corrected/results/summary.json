@@ -1,0 +1,21 @@
+{
+ "env": "wall",
+ "expected_runs": 50,
+ "finished": true,
+ "incomplete_seeds": [],
+ "failed_seeds": [
+  13,
+  31
+ ],
+ "corrected": {
+  "total": 50,
+  "distinct": 50,
+  "successes": 48,
+  "success_rate": 0.96,
+  "mean_state_dist": 3.3407216929195855,
+  "mean_visual_dist": 0.7899717889726162,
+  "mean_proprio_dist": 2.1409223890304565
+ },
+ "previous": null,
+ "paper_success_rate": 0.96
+}

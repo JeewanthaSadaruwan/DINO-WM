@@ -129,7 +129,14 @@ class PlanWorkspace:
         self.device = next(wm.parameters()).device
 
         # have different seeds for each planning instances
-        self.eval_seed = [cfg_dict["seed"] * n + 1 for n in range(cfg_dict["n_evals"])]
+        # Optional `+eval_seed_override=<int>`: instance n gets eval seed override+n.
+        # The default formula below gives eval_seed=[1] for every run when n_evals=1,
+        # so sequential single-task runs would all evaluate the same task.
+        eval_seed_override = cfg_dict.get("eval_seed_override")
+        if eval_seed_override is None:
+            self.eval_seed = [cfg_dict["seed"] * n + 1 for n in range(cfg_dict["n_evals"])]
+        else:
+            self.eval_seed = [int(eval_seed_override) + n for n in range(cfg_dict["n_evals"])]
         print("eval_seed: ", self.eval_seed)
         self.n_evals = cfg_dict["n_evals"]
         self.goal_source = cfg_dict["goal_source"]

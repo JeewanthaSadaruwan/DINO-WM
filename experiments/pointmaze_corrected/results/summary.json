@@ -1,0 +1,28 @@
+{
+ "env": "point_maze",
+ "expected_runs": 50,
+ "finished": true,
+ "incomplete_seeds": [],
+ "failed_seeds": [
+  45
+ ],
+ "corrected": {
+  "total": 50,
+  "distinct": 50,
+  "successes": 49,
+  "success_rate": 0.98,
+  "mean_state_dist": 4.699745323171161,
+  "mean_visual_dist": 0.5016621492346939,
+  "mean_proprio_dist": 1.6214205998182296
+ },
+ "previous": {
+  "total": 50,
+  "distinct": 1,
+  "successes": 50,
+  "success_rate": 1.0,
+  "mean_state_dist": 1.8156530952296026,
+  "mean_visual_dist": 0.4678968696853742,
+  "mean_proprio_dist": 0.6931846100091934
+ },
+ "paper_success_rate": 0.98
+}

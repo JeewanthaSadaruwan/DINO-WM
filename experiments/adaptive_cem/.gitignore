@@ -1,0 +1,7 @@
+# Per-run media written by the evaluator (large, regenerable)
+logs/runs/**/*.mp4
+logs/runs/**/*.png
+logs/runs/**/plan_targets.pkl
+logs/verification/**/*.mp4
+logs/verification/**/*.png
+logs/verification/**/plan_targets.pkl

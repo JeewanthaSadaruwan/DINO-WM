@@ -1,0 +1,7 @@
+- model_name=point_maze
+- ckpt_base_path=/home/nilesh/jeewan_space/dino_wm/checkpoints
+- n_evals=1
+- n_plot_samples=1
+- seed=12
+- +eval_seed_override=12
+- planner.max_iter=20

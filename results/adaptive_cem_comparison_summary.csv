@@ -1,0 +1,17 @@
+metric,original,adaptive,change
+Evaluated tasks,50,50,paired
+Successful tasks,49,50,+1
+Success rate,98.0%,100.0%,+2.0 pp
+Total CEM iterations,452,220,-232 (-51.3%)
+Average CEM iterations per planning call,5.72,3.10,-2.62 (-45.8%)
+Average MPC replanning calls per task,1.58,1.42,-0.16 (-10.1%)
+Total candidate sequences evaluated,"135,600","66,000","-69,600 (-51.3%)"
+Total predictor forward calls (batched),"2,260","1,100","-1,160 (-51.3%)"
+Average planning time per task,42.68 s,20.95 s,-21.72 s (-50.9%)
+Total planning time,2133.9 s,1047.7 s,"-1,086.2 s (-50.9%)"
+Mean final state distance (pos+vel),4.700,4.551,-0.149 (-3.2%)
+Convergence-triggered stops (calls),0,20,
+Tasks hitting MPC step cap,1,0,
+Iteration reduction R_I (%),,,51.33
+Planning time reduction R_T (%),,,50.90
+Candidate evaluation reduction R_C (%),,,51.33

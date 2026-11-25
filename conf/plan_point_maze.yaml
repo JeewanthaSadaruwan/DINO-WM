@@ -52,4 +52,14 @@ planner:
     var_scale: 1
     opt_steps: 10
     eval_every: 1
+    # Adaptive CEM early stopping (extension; see experiments/adaptive_cem/README.md).
+    # Disabled by default -> original DINO-WM CEM behaviour.
+    adaptive_cem:
+      enabled: false
+      min_iterations: 3
+      relative_tolerance: 0.01
+      patience: 2
+      delta: 1.0e-8
+      return_best: true
+    stats_filename: null # e.g. cem_calls.jsonl to log one JSON record per CEM call
   name: mpc_cem

@@ -1,0 +1,9 @@
+{
+  "torch": "2.11.0+cu128",
+  "cuda": "12.8",
+  "gpu": "NVIDIA GeForce RTX 5090 Laptop GPU",
+  "python": "3.10.22",
+  "precision": "float32 (default, unchanged)",
+  "git_commit": "1f4b42f46864932478e8dec35ea780bd8dc3f84c",
+  "git_dirty": true
+}

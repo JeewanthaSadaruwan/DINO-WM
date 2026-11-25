@@ -1,0 +1,8 @@
+{
+  "method": "adaptive",
+  "task": 3,
+  "exit_code": 0,
+  "timed_out": false,
+  "process_wall_time_s": 8.961310625076294,
+  "max_mpc_steps": 20
+}

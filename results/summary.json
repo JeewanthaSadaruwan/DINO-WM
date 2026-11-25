@@ -100,5 +100,185 @@
   },
   "mpc_iters": 1
  },
- "wall_50": null
+ "wall_50": null,
+ "pointmaze_corrected": {
+  "total": 50,
+  "distinct": 50,
+  "successes": 49,
+  "success_rate": 0.98,
+  "mean_state_dist": 4.699745323171161,
+  "mean_visual_dist": 0.5016621492346939,
+  "mean_proprio_dist": 1.6214205998182296,
+  "failed_seeds": [
+   45
+  ],
+  "mpc_iters_hist": {
+   "1": 41,
+   "2": 6,
+   "3": 2,
+   "20": 1
+  },
+  "start_goal_xy_dist": {
+   "min": 0.17854145176961012,
+   "median": 1.2441451057630082,
+   "max": 2.6433729740617387
+  },
+  "state_dist_successes": {
+   "median": 4.8484885360516445,
+   "min": 1.0980272383847762,
+   "max": 10.189284358282935
+  },
+  "example_replanning": {
+   "seed": 30,
+   "iters": 3,
+   "xy_dist": 2.2091093703119364
+  },
+  "example_failure": {
+   "seed": 45,
+   "iters": 20,
+   "xy_dist": 2.6433729740617387,
+   "initial_state": "3.0714 1.9288 -2.2844 -4.4184",
+   "goal_state": "0.6262 0.9246 -4.0143 1.3316"
+  }
+ },
+ "adaptive_cem": {
+  "n_paired_tasks": 50,
+  "original": {
+   "evaluated_tasks": 50,
+   "successful_tasks": 49,
+   "success_rate": 0.98,
+   "total_cem_iterations": 452,
+   "avg_cem_iterations_per_call": 5.7215189873417724,
+   "n_planning_calls": 79,
+   "avg_mpc_calls_per_task": 1.58,
+   "total_candidates": 135600,
+   "total_wm_rollout_calls": 452,
+   "total_predictor_forward_calls": 2260,
+   "total_encoder_forward_calls": 531,
+   "avg_planning_time_per_task_s": 42.67723701878204,
+   "total_planning_time_s": 2133.8618509391017,
+   "mean_final_state_dist": 4.699745323171161,
+   "convergence_stops": 0,
+   "success_stops": 49,
+   "max_iteration_stops": 30,
+   "tasks_hitting_mpc_cap": 1,
+   "avg_process_wall_time_per_task_s": 48.8660047006607
+  },
+  "adaptive": {
+   "evaluated_tasks": 50,
+   "successful_tasks": 50,
+   "success_rate": 1,
+   "total_cem_iterations": 220,
+   "avg_cem_iterations_per_call": 3.0985915492957745,
+   "n_planning_calls": 71,
+   "avg_mpc_calls_per_task": 1.42,
+   "total_candidates": 66000,
+   "total_wm_rollout_calls": 220,
+   "total_predictor_forward_calls": 1100,
+   "total_encoder_forward_calls": 291,
+   "avg_planning_time_per_task_s": 20.953864433459092,
+   "total_planning_time_s": 1047.6932216729547,
+   "mean_final_state_dist": 4.550629186704436,
+   "convergence_stops": 20,
+   "success_stops": 50,
+   "max_iteration_stops": 1,
+   "tasks_hitting_mpc_cap": 0,
+   "avg_process_wall_time_per_task_s": 25.831707706451414
+  },
+  "reductions_pct": {
+   "R_I": 51.32743362831859,
+   "R_T": 50.901544014582285,
+   "R_C": 51.32743362831859,
+   "R_predictor_calls": 51.32743362831859
+  },
+  "bootstrap_95ci": {
+   "R_I": [
+    11.11111111111111,
+    72.22222222222223
+   ],
+   "R_T": [
+    10.870228815887108,
+    71.911097776371
+   ],
+   "R_C": [
+    11.11111111111111,
+    72.22222222222223
+   ],
+   "mean_planning_time_baseline": [
+    18.684965425200716,
+    83.17675402354463
+   ],
+   "mean_planning_time_adaptive": [
+    15.508171936858853,
+    27.24791057423914
+   ]
+  },
+  "sensitivity_excluding_mpc_cap_tasks": {
+   "excluded_tasks": [
+    45
+   ],
+   "n_tasks": 49,
+   "R_I": 20.634920634920636,
+   "R_T": 20.287255439439637,
+   "R_C": 20.634920634920636,
+   "R_I_ci": [
+    8.064516129032258,
+    31.372549019607842
+   ],
+   "R_T_ci": [
+    7.832820866647237,
+    30.964417893760775
+   ]
+  },
+  "change": {
+   "success_rate_pp": 2.0000000000000018
+  },
+  "paired_stats": {
+   "success_original_only": 0,
+   "success_adaptive_only": 1,
+   "success_mcnemar_exact_p": 1.0,
+   "planning_time_diff_s_mean": -21.72337258532294,
+   "planning_time_diff_s_median": -0.00484049799888453,
+   "tasks_adaptive_faster": 29,
+   "tasks_identical_iterations": 39,
+   "iteration_diff_mean": -4.64,
+   "tasks_adaptive_fewer_iterations": 9,
+   "tasks_adaptive_more_iterations": 2
+  }
+ },
+ "wall_corrected": {
+  "total": 50,
+  "distinct": 50,
+  "successes": 48,
+  "success_rate": 0.96,
+  "mean_state_dist": 3.3407216929195855,
+  "mean_visual_dist": 0.7899717889726162,
+  "mean_proprio_dist": 2.1409223890304565,
+  "failed_seeds": [
+   13,
+   31
+  ],
+  "mpc_iters_hist": {
+   "1": 36,
+   "2": 10,
+   "3": 1,
+   "4": 1,
+   "20": 2
+  },
+  "tasks_crossing_wall": 50,
+  "via_door_path": {
+   "min": 24.89009796372097,
+   "median": 45.22329081897908,
+   "max": 60.724396999041545
+  },
+  "failed_via_door_rank": {
+   "13": 33,
+   "31": 50
+  },
+  "example_replanning": {
+   "seed": 45,
+   "iters": 4,
+   "via_door": 38.513459160091294
+  }
+ }
 }
