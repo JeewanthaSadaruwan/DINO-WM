@@ -1,446 +1,389 @@
 \documentclass[11pt]{article}
 
-\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[a4paper, margin=2.2cm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{caption}
-\usepackage{subcaption}
 \usepackage{float}
 \usepackage{microtype}
 \usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
 \usepackage[hidelinks]{hyperref}
 
+\definecolor{note}{HTML}{52514E}
 \captionsetup{font=small, labelfont=bf}
-\setlength{\parskip}{0.4em}
+\setlength{\parskip}{0.45em}
 \setlength{\parindent}{0pt}
+\setlist{itemsep=0.15em, topsep=0.3em}
+\emergencystretch=3em
 
-\title{\textbf{DINO-WM: Evaluation Results}\\[0.3em]
-\large PointMaze Navigation \& PushT Manipulation}
+\newcommand{\fig}[1]{\texttt{\small figures/#1}}
+
+\title{\textbf{DINO-WM Reproduction: Planning Evaluation}\\[0.4em]
+\large PointMaze \textbullet{} PushT \textbullet{} Wall}
 \author{}
-\date{}
+\date{25 November 2026}
 
 \begin{document}
-
 \maketitle
-\vspace{-3.5em}
+\vspace{-3em}
 
-%%% =========================================================
-%%%  PART 1 — POINTMAZE
-%%% =========================================================
-\section{Part 1: PointMaze Navigation}
+%% ==========================================================
+\section{Summary}
+%% ==========================================================
 
-\subsection{Experimental Setup}
-
-We evaluated the pretrained DINO-WM PointMaze checkpoint on goal-conditioned
-navigation without additional training. For each task, the initial and goal
-states were sampled uniformly at random from the free space of the maze using
-the evaluation seed. The initial and goal observations were rendered from these
-states.
-
-Navigation was performed using Model Predictive Control (MPC) with the
-Cross-Entropy Method (CEM). CEM generates candidate action sequences, predicts
-their future representations using DINO-WM, and optimizes the actions based on
-their predicted distance to the goal representation.
-
-The planner uses 300 candidate sequences, 30 elites, a planning horizon of 5
-world-model steps, and up to 10 CEM optimization iterations. Each world-model
-step corresponds to 5 low-level environment actions, giving a maximum planned
-horizon of 25 environment actions. A task is successful when the agent reaches
-within 0.5 units of the goal position.
-
-Evaluating 50 tasks simultaneously exceeded GPU memory capacity. Therefore, we
-performed 50 evaluations sequentially using \texttt{n\_evals=1} and seeds 1--50.
-All evaluations used the same pretrained checkpoint and planning configuration.
-
-\subsection{Evaluation Results}
+We evaluated the pretrained DINO-WM checkpoints released by the authors on
+goal-reaching tasks, using the authors' planning code (MPC with a CEM planner)
+without any retraining. Table~\ref{tab:summary} and Figure~\ref{fig:success}
+give the headline results.
 
 \begin{table}[H]
   \centering
-  \caption{PointMaze evaluation results over 50 sequential tasks.}
-  \label{tab:pointmaze_results}
-  \begin{tabular}{lr}
+  \caption{Results at a glance. Paper numbers are DINO-WM with MPC, Table~1 of
+  Zhou et al.\ (arXiv 2411.04983), each measured on 50 sampled start/goal pairs.}
+  \label{tab:summary}
+  \small
+  \begin{tabular}{lcccl}
     \toprule
-    \textbf{Metric} & \textbf{Result} \\
+    \textbf{Task} & \textbf{Ours} & \textbf{Distinct tasks} & \textbf{Paper} & \textbf{Comparable to paper?} \\
     \midrule
-    Total evaluation tasks                  & 50 \\
-    Successful tasks                        & 50 \\
-    Success rate                            & 100.00\% \\
-    Mean state distance                     & 1.816 \\
-    Mean visual distance                    & 0.468 \\
-    Mean proprioceptive distance            & 0.693 \\
-    Mean visual embedding diversity         & 68.371 \\
-    Mean proprioceptive embedding diversity & 1.424 \\
+    PointMaze & 50/50 (100\%) & 1  & 98\% & No: one task repeated 50 times \\
+    PushT     & 48/50 (96\%)  & 49 & 90\% & Yes \\
+    Wall      & 1/1 (100\%)   & 1  & 96\% & No: single test run; 50-task run pending \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/pointmaze_example.png}
-  \caption{A successful PointMaze evaluation (seed 1). Top row: the trajectory executed
-  in the real environment. Bottom row: the rollout predicted by DINO-WM for the
-  same actions. The rightmost column shows the goal observation.}
-  \label{fig:pointmaze_example}
+  \includegraphics[width=0.82\linewidth]{figures/fig01_success_vs_paper.png}
+  \caption{Success rate of our reproduction versus the paper. Only the PushT bar
+  is a like-for-like comparison (see Section~\ref{sec:seed}).}
+  \label{fig:success}
 \end{figure}
 
-\subsection{Comparison with the Paper}
+\textbf{Key findings}
+\begin{itemize}
+  \item \textbf{PushT: 96\% (48/50), versus 90\% in the paper.} Every successful
+        task was solved in the first MPC iteration (25 environment actions).
+        The two failures never reached the goal, and their world-model
+        predictions visibly drifted from the real environment
+        (Section~\ref{sec:pusht-fail}).
+  \item \textbf{PointMaze: the planner succeeded on all 50 runs, but they were
+        the same task.} Running with \texttt{n\_evals=1} fixes the evaluation
+        seed to 1, so all runs used one start/goal pair. The runs show the
+        planner is reliable on that task, not a 50-task success rate.
+  \item \textbf{Wall: the pipeline works.} One test task succeeded in a single
+        MPC iteration, reducing the state distance from 25.7 to 3.4. The
+        50-task run has not been done yet.
+  \item \textbf{Earlier report corrected.} The previous version reported
+        PushT as 50/50 and compared it with 86\%. Two runs had crashed without
+        reaching the goal, and 86\% is the paper's open-loop CEM number; the
+        MPC number we should compare with is 90\%.
+\end{itemize}
+
+%% ==========================================================
+\section{Experimental Setup}
+%% ==========================================================
+
+\subsection{Model and planner}
+
+All three checkpoints use a frozen DINOv2 ViT-S/14 encoder on
+224$\times$224 images, with a learned ViT predictor and a frameskip of 5
+(one world-model step = 5 environment actions). Planning is model predictive
+control: at each MPC iteration CEM optimises a 5-step plan, the first 5
+world-model steps (25 environment actions) are executed, and the planner
+re-plans from the new observation until the task succeeds.
 
 \begin{table}[H]
   \centering
-  \caption{PointMaze success rate compared with the original paper.}
-  \label{tab:pointmaze_comparison}
-  \begin{tabular}{lr}
+  \caption{Planner settings (from \texttt{conf/plan\_*.yaml}). $\alpha$ weights
+  the proprioceptive term in the goal-distance objective.}
+  \label{tab:planner}
+  \begin{tabular}{lccc}
     \toprule
-    \textbf{Experiment} & \textbf{Success Rate} \\
+    & \textbf{PointMaze} & \textbf{PushT} & \textbf{Wall} \\
     \midrule
-    DINO-WM paper (PointMaze) & 98\% \\
-    Our reproduction          & 100\% \\
+    Planner                    & MPC + CEM & MPC + CEM & MPC + CEM \\
+    CEM samples / elites       & 300 / 30  & 300 / 30  & 300 / 30 \\
+    Planning horizon (WM steps)& 5         & 5         & 5 \\
+    CEM optimisation steps     & 10        & 30        & 10 \\
+    Objective weight $\alpha$  & 0 (visual only) & 1   & 1 \\
+    History frames             & 3         & 3         & 1 \\
+    Goal source                & random state & dataset & random state \\
+    Goal horizon               & 5 WM steps & 5 WM steps & 5 WM steps \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Our evaluation succeeded on 50 of 50 navigation tasks (100\%), compared with
-98\% in the original paper. However, our tasks were sampled with our own seeds
-and may differ from the tasks used in the paper. With only 50 tasks, a single
-failure changes the success rate by 2 percentage points. This result therefore
-should not be read as evidence that the model performs better than reported. It
-does confirm that our reproduction is consistent with the published performance.
-
-%%% =========================================================
-%%%  PART 2 — PUSHT
-%%% =========================================================
-\newpage
-\section{Part 2: PushT Manipulation}
-
-\subsection{Experimental Setup}
-
-PushT is a 2-D planar manipulation task in which a circular agent must push a
-T-shaped block to a fixed goal configuration indicated by a grey silhouette
-rendered in the environment. The environment provides pixel observations
-(96$\times$96 RGB) and a 2-D agent position as proprioception.
-
-We evaluated the pretrained \textbf{DINO-WM PushT checkpoint} on 50 randomly
-seeded episodes without any additional fine-tuning. Each episode begins with the
-agent and block placed at a random initial configuration; success is declared
-when the overlap between the block and the goal silhouette exceeds a fixed
-threshold.
-
-Planning used the same CEM-based MPC pipeline as PointMaze: candidate action
-sequences are rolled out in the learned world-model's latent space, and the
-sequence that minimises the predicted distance to the goal visual embedding is
-executed in the real environment. The world-model uses frozen DINOv2 patch
-features as the visual backbone, with a lightweight MLP-based proprioceptive
-encoder operating alongside it.
-
-Due to GPU memory constraints the 50 evaluations were run sequentially
-(one episode at a time) using evaluation seeds 1--50. All episodes share the
-same pretrained checkpoint and planning hyper-parameters.
-
-\subsection{Quantitative Results}
+\subsection{Success criteria}
 
 \begin{table}[H]
   \centering
-  \caption{PushT evaluation results over 50 sequential episodes. Distances are
-  reported in pixel / embedding units; lower is better for all distance metrics.}
-  \label{tab:pusht_results}
-  \begin{tabular}{lrrr}
+  \caption{Success is checked in the true environment state, not in the model.}
+  \begin{tabularx}{\linewidth}{lX}
+    \toprule
+    \textbf{Task} & \textbf{Success when\ldots} \\
+    \midrule
+    PointMaze & agent $(x,y)$ is within 0.5 of the goal position \\
+    PushT     & block and agent positions are within 20 of the goal
+                (Euclidean norm over the 4 position values) \emph{and} the block
+                angle is within $20^\circ$ \\
+    Wall      & agent $(x,y)$ is within 4.5 of the goal position \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The reported \emph{state distance} is the norm over the full state vector,
+which also includes velocities. A successful run can therefore have a
+large state distance, so we do not use it as a difficulty measure.
+
+\subsection{Hardware and protocol}
+\label{sec:seed}
+
+All runs used one NVIDIA RTX~5090 Laptop GPU (24\,GB). PointMaze and PushT
+were run as 50 separate processes with \texttt{n\_evals=1} and
+\texttt{seed}$=1,\dots,50$.
+
+\textbf{Seed caveat.} \texttt{plan.py} sets the evaluation seeds to
+$\texttt{seed}\times n + 1$ for $n = 0,\dots,\texttt{n\_evals}-1$. With
+\texttt{n\_evals=1} this is always 1, whatever \texttt{seed} is passed. Tasks
+whose start/goal come from this seed (\emph{random state}: PointMaze, Wall)
+therefore repeat the same task in every run. PushT draws its start/goal from
+the dataset using the global seed, so its 50 runs are genuinely different
+(49 distinct start/goal pairs). The correct protocol for PointMaze and Wall
+is a single run with \texttt{n\_evals=50}, which gives 50 different
+evaluation seeds.
+
+%% ==========================================================
+\section{PointMaze Navigation}
+%% ==========================================================
+
+\begin{table}[H]
+  \centering
+  \caption{PointMaze: 50 runs of the same start/goal pair.}
+  \begin{tabular}{lccc}
     \toprule
     \textbf{Metric} & \textbf{Mean} & \textbf{Min} & \textbf{Max} \\
     \midrule
-    Total evaluation episodes           & \multicolumn{3}{c}{50} \\
-    Successful episodes                 & \multicolumn{3}{c}{\textbf{50 (100\%)}} \\
-    \midrule
-    Final state distance (px)           & 41.02 & 13.70 & 108.70 \\
-    Final visual distance               &  2.95 &  1.05 &   4.99 \\
-    Final proprioceptive distance       & 15.48 &  4.37 &  38.10 \\
+    Successful runs               & \multicolumn{3}{c}{50 / 50} \\
+    Final state distance          & 1.82 & 0.91 & 2.87 \\
+    Final visual (DINO) distance  & 0.47 & 0.31 & 0.58 \\
+    Final proprioceptive distance & 0.69 & 0.35 & 1.10 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\textbf{Key observations.}
-\begin{itemize}
-  \item \textbf{Perfect success rate:} The policy succeeded on every one of the
-        50 episodes, achieving a 100\% success rate across a diverse range of
-        initial configurations.
-  \item \textbf{Wide but manageable state-distance spread:} Final state
-        distances ranged from 13.7 (very easy) to 108.7 (very hard), yet
-        the planner consistently found a solution, demonstrating strong
-        generalisation.
-  \item \textbf{Tight visual distances:} Visual embedding distances stayed in
-        the narrow range 1.05--4.99, confirming that the DINOv2 features
-        provide a stable and consistent goal representation across episodes.
-  \item \textbf{Comparison with paper:} The original DINO-WM paper reports a
-        PushT success rate of \textbf{86\%}. Our reproduction achieves 100\%,
-        although exact seed parity with the paper cannot be guaranteed.
-\end{itemize}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig02_pointmaze_example.png}
+  \caption{PointMaze task (run 1). \textit{Top row:} frames from the real
+  environment while executing the planned actions. \textit{Bottom row:} frames
+  decoded from DINO-WM's imagined rollout of the same actions.
+  \textit{Rightmost column:} the goal. The two rows agree closely.}
+  \label{fig:pm-example}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig03_pointmaze_repeat_spread.png}
+  \caption{Final state distance across the 50 repeats of the PointMaze task.
+  Only the CEM sampling noise differs between runs; every run succeeded.}
+  \label{fig:pm-spread}
+\end{figure}
+
+\textbf{Interpretation.} The planner reaches this goal every time, and the
+spread in Figure~\ref{fig:pm-spread} reflects CEM's random sampling only.
+Because all runs share one task, this does not measure the 98\% task success
+rate reported in the paper. Re-running with \texttt{n\_evals=50} is needed for
+that comparison.
+
+%% ==========================================================
+\section{PushT Manipulation}
+%% ==========================================================
+
+The agent (blue dot) must push the grey T-block into the pose shown in the
+goal image. The goal is the block's pose 25 environment actions later in a
+dataset trajectory. The green T drawn in every frame is part of the
+environment's rendering, not this task's goal; the goal is always the
+rightmost column of each figure.
 
 \begin{table}[H]
   \centering
-  \caption{PushT success rate compared with the original paper.}
-  \label{tab:pusht_comparison}
-  \begin{tabular}{lr}
+  \caption{PushT: 50 runs, 49 distinct start/goal pairs. Distances are over
+  the 48 completed runs.}
+  \begin{tabular}{lcccc}
     \toprule
-    \textbf{Experiment} & \textbf{Success Rate} \\
+    \textbf{Metric} & \textbf{Mean} & \textbf{Median} & \textbf{Min} & \textbf{Max} \\
     \midrule
-    DINO-WM paper (PushT) & 86\% \\
-    Our reproduction      & \textbf{100\%} \\
+    Successful runs               & \multicolumn{4}{c}{48 / 50 (96\%)} \\
+    Solved in first MPC iteration & \multicolumn{4}{c}{48 / 48} \\
+    Final state distance          & 41.87 & 36.74 & 13.70 & 108.70 \\
+    Final visual (DINO) distance  & 2.96  & 3.02  & 1.05  & 4.99 \\
+    Final proprioceptive distance & 15.78 & 14.87 & 4.37  & 38.10 \\
+    \midrule
+    Initial block distance to goal (px) & -- & 30.7 & 0.0 & 126.5 \\
+    Initial block angle error ($^\circ$) & -- & 17.5 & 0.0 & 120.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\subsection{Statistical Summary}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig04_pusht_difficulty_vs_outcome.png}
+  \caption{How far the block starts from its goal pose, and the outcome. Tasks
+  with the block over 100\,px away or rotated by over $100^\circ$ were solved;
+  the two failures lie in the middle of the range.}
+  \label{fig:pt-diff}
+\end{figure}
 
-Figure~\ref{fig:pusht_summary} provides a high-level overview of the
-evaluation outcomes. The left panel confirms the 100\% success rate; the right
-panel shows the mean value of each distance metric together with error bars
-spanning the observed minimum and maximum.
+Difficulty does not predict failure here (Figure~\ref{fig:pt-diff}): the
+planner solved tasks with the block up to 126\,px away or rotated up to
+$120^\circ$, while both failures started at moderate offsets (45--63\,px,
+35--47$^\circ$).
+
+\subsection{Successful examples}
+
+Each figure shows the real environment (top row), the world model's imagined
+rollout (bottom row) and the goal (rightmost column). All three were solved in
+one MPC iteration.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/pusht_summary.png}
-  \caption{PushT evaluation summary across 50 episodes.
-  \textit{Left:} Success/failure pie chart (all 50 episodes succeeded).
-  \textit{Right:} Mean final distances with error bars showing [min, max] range.}
-  \label{fig:pusht_summary}
+  \includegraphics[width=\linewidth]{figures/fig05_pusht_easy.png}
+  \caption{Easy task (run 40): block starts 12.9\,px and $7^\circ$ from the goal.}
 \end{figure}
-
-Figure~\ref{fig:pusht_state_hist} shows the distribution of final state
-distances. Most episodes cluster between 20 and 60 pixels, with a long right
-tail corresponding to the harder initial configurations (block far from goal).
-The distribution confirms that the evaluation set covers a broad difficulty
-range, and the planner solved all of them.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{figures/pusht_state_dist_hist.png}
-  \caption{Histogram of final state distances across all 50 PushT episodes.
-  The dashed red line marks the mean (41.0\,px); the dashed orange line marks
-  the median. All episodes ended in success regardless of difficulty.}
-  \label{fig:pusht_state_hist}
+  \includegraphics[width=\linewidth]{figures/fig06_pusht_medium.png}
+  \caption{Median task (run 42): block starts 30.7\,px and $12^\circ$ from the goal.}
 \end{figure}
-
-Figure~\ref{fig:pusht_per_run} shows per-episode state distances sorted from
-easiest to hardest. Episodes are colour-coded by difficulty tier:
-{\color{green!60!black}green} ($<$50\,px), {\color{orange}orange}
-(50--80\,px), and {\color{red}red} ($\geq$80\,px). Even the three hardest
-episodes (state dist $>$80\,px) were solved successfully, underscoring the
-robustness of the DINO-WM planner.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/pusht_per_run_dist.png}
-  \caption{Per-episode final state distances for all 50 PushT evaluations,
-  sorted in ascending order. All episodes resulted in success.
-  Colour indicates difficulty: green ($<$50\,px), orange (50--80\,px),
-  red ($\geq$80\,px).}
-  \label{fig:pusht_per_run}
+  \includegraphics[width=\linewidth]{figures/fig07_pusht_hard.png}
+  \caption{Hardest task by distance (run 44): block starts 126.5\,px and
+  $20^\circ$ from the goal. The agent pushes it diagonally into place, and
+  the imagined rollout matches the real one throughout.}
 \end{figure}
 
-\subsection{Qualitative Examples}
+\subsection{Failure cases}
+\label{sec:pusht-fail}
 
-We show three representative episodes spanning the difficulty range: an easy
-episode (state dist $\approx$13.7\,px), a medium episode (state dist
-$\approx$35.6\,px), and a hard episode (state dist $\approx$108.7\,px).
-
-For each episode we include two images:
-\begin{itemize}
-  \item \textbf{plan0.png} --- the initial plan visualisation showing the
-        imagined future trajectory in the world model's latent space (top row)
-        together with the corresponding decoded / rendered frames (bottom row),
-        with the goal observation on the right.
-  \item \textbf{output\_final.png} --- the final state of the real environment
-        after the planned actions are executed, confirming that the T-block has
-        been pushed into the goal silhouette.
-\end{itemize}
-
-\subsubsection*{Easy Episode (state distance $\approx$ 13.7 px)}
+Runs 2 and 9 did not reach the goal. Each ran 69 MPC iterations
+(1,725 environment actions) and then stopped with a CUDA out-of-memory error.
+Memory grows with every MPC iteration because the whole trajectory is kept
+for evaluation. A later re-run of run 2 was stopped by hand after 27 further
+iterations, still without success. With the paper's default
+\texttt{max\_iter: null}, MPC never stops on its own if a task is not solved;
+we recommend capping it (e.g.\ \texttt{planner.max\_iter=30}) and counting
+capped runs as failures.
 
 \begin{figure}[H]
   \centering
-  \begin{subfigure}[t]{0.52\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/pusht_easy_plan0.png}
-    \caption{Initial world-model plan. The model predicts a short, direct push
-    to align the T-block with the goal (grey silhouette, right column).}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.44\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/pusht_easy_output.png}
-    \caption{Final environment state after executing the plan. The T-block is
-    well aligned with the goal silhouette.}
-  \end{subfigure}
-  \caption{Easy PushT episode (final state dist $= 13.7$\,px, \textbf{success}).}
-  \label{fig:pusht_easy}
+  \includegraphics[width=\linewidth]{figures/fig08a_pusht_failure_first_plan.png}
+  \caption{Failure (run 2), first MPC iteration. The block starts 63\,px and
+  $47^\circ$ from the goal.}
 \end{figure}
-
-\subsubsection*{Medium Episode (state distance $\approx$ 35.6 px)}
 
 \begin{figure}[H]
   \centering
-  \begin{subfigure}[t]{0.52\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/pusht_medium_plan0.png}
-    \caption{Initial world-model plan for a medium-difficulty configuration.
-    The agent must navigate around the block before pushing it.}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.44\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/pusht_medium_output.png}
-    \caption{Final environment state. The T-block is successfully pushed into
-    the goal region despite a larger initial displacement.}
-  \end{subfigure}
-  \caption{Medium PushT episode (final state dist $= 35.6$\,px, \textbf{success}).}
-  \label{fig:pusht_medium}
+  \includegraphics[width=\linewidth]{figures/fig08b_pusht_failure_last_frames.png}
+  \caption{Failure (run 2), last frames before the crash. The imagined block
+  pose (bottom) no longer matches the real one (top): the world model's
+  prediction has drifted, so the plan that looks good in the model does not
+  move the real block towards the goal.}
 \end{figure}
 
-\subsubsection*{Hard Episode (state distance $\approx$ 108.7 px)}
+%% ==========================================================
+\section{Wall Navigation}
+%% ==========================================================
 
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[t]{0.52\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/pusht_hard_plan0.png}
-    \caption{Initial world-model plan for the hardest episode. The T-block
-    starts far from the goal, requiring a long, complex pushing sequence.}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.44\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{figures/pusht_hard_output.png}
-    \caption{Final environment state. Even from this challenging configuration,
-    the planner successfully manipulates the block into the goal.}
-  \end{subfigure}
-  \caption{Hard PushT episode (final state dist $= 108.7$\,px, \textbf{success}).
-  This is the most challenging episode in our evaluation set; it still ends in success.}
-  \label{fig:pusht_hard}
-\end{figure}
-
-\subsection{Figure Reference Guide}
-
-Table~\ref{tab:fig_ref} summarises every figure used in this report together
-with a short description of what it shows, what each visual element represents,
-and what the reader should take away from it.
+The agent (red dot) must move to a goal on the other side of a wall and pass
+through the door. We have run one test task so far, using the
+\texttt{wall\_single} checkpoint.
 
 \begin{table}[H]
   \centering
-  \caption{Reference guide for all figures in this report.}
-  \label{tab:fig_ref}
+  \caption{Wall test run (\texttt{seed=99}, \texttt{n\_evals=1}).}
+  \begin{tabular}{lc}
+    \toprule
+    \textbf{Metric} & \textbf{Result} \\
+    \midrule
+    Success                        & Yes (1/1) \\
+    MPC iterations needed          & 1 \\
+    State distance: start $\rightarrow$ final & 25.71 $\rightarrow$ 3.41 \\
+    Final visual (DINO) distance   & 0.98 \\
+    Final proprioceptive distance  & 2.33 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig09_wall_example.png}
+  \caption{Wall test task. The agent moves down to the door, passes through
+  the wall and stops near the goal (rightmost column). Imagined (bottom) and
+  real (top) trajectories agree.}
+\end{figure}
+
+\textbf{Next step.} Run \texttt{run\_wall\_eval.sh}, which runs 50
+different tasks in one process (\texttt{n\_evals=50}, \texttt{seed=99},
+\texttt{planner.max\_iter=30}). Then rebuild the figures with
+\texttt{results/make\_figures.py} and update this section with the result.
+
+%% ==========================================================
+\section{Limitations and Next Steps}
+%% ==========================================================
+
+\begin{enumerate}
+  \item \textbf{PointMaze must be re-run} with \texttt{n\_evals=50} to measure
+        a real 50-task success rate.
+  \item \textbf{Wall 50-task evaluation} is still to be run.
+  \item \textbf{PushT tasks differ from the paper's.} Start/goal pairs come
+        from our seeds, and with 50 tasks one failure moves the success rate
+        by 2 points, so 96\% versus 90\% is within the expected variation.
+  \item \textbf{Iteration cap.} Unsolved tasks run until they crash. Future
+        runs should set an iteration cap
+        (\texttt{planner.max\_iter}) so failures are recorded cleanly.
+\end{enumerate}
+
+%% ==========================================================
+\appendix
+\section{Figure Files for Presentations}
+%% ==========================================================
+
+All figures are in \texttt{results/figures/} as 200-dpi PNGs, and short videos
+of the example runs are in \texttt{results/figures/videos/}. They are rebuilt
+from the logs by \texttt{results/make\_figures.py}, and the numbers used in
+this report are written to \texttt{results/summary.json}.
+
+\begin{table}[H]
+  \centering
   \small
-  \begin{tabular}{p{3.2cm} p{2.2cm} p{9.0cm}}
+  \begin{tabularx}{\linewidth}{lX}
     \toprule
-    \textbf{Figure / File name} & \textbf{Section} & \textbf{Description \& what each element represents} \\
+    \textbf{File} & \textbf{Content} \\
     \midrule
-
-    \texttt{pointmaze\_example.png}
-    & Fig.\,1 (Pt.\,1)
-    & Contact-sheet of a single PointMaze episode (seed 1).
-      \textit{Top row}: real frames captured from the maze environment as the
-      agent navigates toward the goal.
-      \textit{Bottom row}: frames \emph{predicted} by the DINO-WM world model
-      for the same action sequence, rendered purely from latent representations.
-      \textit{Rightmost column}: the goal observation the planner was given.
-      Similarity between rows shows how accurately the world model imagines the future.
-      \\[4pt]
-
-    \texttt{pusht\_summary.png}
-    & Fig.\,2 (Pt.\,2)
-    & Two-panel overview of all 50 PushT evaluations.
-      \textit{Left pie chart}: proportion of successful vs.\ failed episodes
-      (green = success, red = failure) — here 100\,\% green.
-      \textit{Right bar chart}: mean final distance for each metric (state,
-      visual, proprioceptive) with error bars spanning the observed
-      [min,\,max] range; lower bars indicate closer alignment with the goal.
-      \\[4pt]
-
-    \texttt{pusht\_state\_dist\_hist.png}
-    & Fig.\,3 (Pt.\,2)
-    & Histogram of final state distances (pixels) across all 50 episodes,
-      binned into 12 intervals.
-      Each bar counts how many episodes ended with that distance from the goal.
-      The \textit{red dashed line} marks the mean (41.0\,px);
-      the \textit{orange dashed line} marks the median.
-      A right-skewed distribution means most episodes are moderate, with a few
-      very hard ones — all still solved.
-      \\[4pt]
-
-    \texttt{pusht\_per\_run\_dist.png}
-    & Fig.\,4 (Pt.\,2)
-    & Bar chart of per-episode state distances, sorted from smallest to largest
-      (easiest to hardest).
-      \textit{Green bars} ($<$50\,px): easy episodes with a small initial
-      block-to-goal gap.
-      \textit{Orange bars} (50--80\,px): medium-difficulty episodes.
-      \textit{Red bars} ($\geq$80\,px): hard episodes where the block starts far
-      from the goal silhouette.
-      The \textit{dashed navy line} marks the mean.
-      All bars correspond to successful episodes.
-      \\[4pt]
-
-    \texttt{pusht\_easy\_plan0.png}
-    & Fig.\,5a (Pt.\,2)
-    & World-model plan at the \emph{start} of the easiest episode
-      (state dist $\approx$13.7\,px).
-      \textit{Each column}: one imagined future time step predicted by DINO-WM.
-      \textit{Top sub-row}: decoded visual frames from the latent space.
-      \textit{Bottom sub-row}: proprioceptive trajectory overlaid on the scene.
-      \textit{Rightmost column}: the target goal observation.
-      A compact plan with few steps indicates an easy, nearby goal.
-      \\[4pt]
-
-    \texttt{pusht\_easy\_output.png}
-    & Fig.\,5b (Pt.\,2)
-    & Final real-environment frame of the easy episode after the planned
-      actions are executed.
-      The T-shaped block (coloured) overlaps the grey goal silhouette,
-      confirming task success.
-      \\[4pt]
-
-    \texttt{pusht\_medium\_plan0.png}
-    & Fig.\,6a (Pt.\,2)
-    & World-model plan for a medium-difficulty episode
-      (state dist $\approx$35.6\,px).
-      More time steps are needed; the agent first manoeuvres around the block
-      before pushing it. The imagined frames show a curved approach path.
-      \\[4pt]
-
-    \texttt{pusht\_medium\_output.png}
-    & Fig.\,6b (Pt.\,2)
-    & Final real-environment frame of the medium episode.
-      Despite the larger initial displacement, the T-block is successfully
-      pushed into the goal silhouette.
-      \\[4pt]
-
-    \texttt{pusht\_hard\_plan0.png}
-    & Fig.\,7a (Pt.\,2)
-    & World-model plan for the hardest episode in our set
-      (state dist $\approx$108.7\,px).
-      The block starts far from the goal; the plan contains many steps and shows
-      a long, complex pushing sequence imagined entirely in latent space.
-      \\[4pt]
-
-    \texttt{pusht\_hard\_output.png}
-    & Fig.\,7b (Pt.\,2)
-    & Final real-environment frame of the hard episode.
-      Even from this extreme starting configuration the planner successfully
-      aligns the T-block with the goal silhouette, demonstrating the
-      robustness of DINO-WM.
-      \\
-
+    \fig{fig01\_success\_vs\_paper.png} & Success rate per task vs paper \\
+    \fig{fig02\_pointmaze\_example.png} & PointMaze real vs imagined rollout \\
+    \fig{fig03\_pointmaze\_repeat\_spread.png} & PointMaze spread over 50 repeats \\
+    \fig{fig04\_pusht\_difficulty\_vs\_outcome.png} & PushT initial offset vs outcome \\
+    \fig{fig05\_pusht\_easy.png} & PushT easy example (run 40) \\
+    \fig{fig06\_pusht\_medium.png} & PushT median example (run 42) \\
+    \fig{fig07\_pusht\_hard.png} & PushT hardest example (run 44) \\
+    \fig{fig08a\_pusht\_failure\_first\_plan.png} & PushT failure, first plan (run 2) \\
+    \fig{fig08b\_pusht\_failure\_last\_frames.png} & PushT failure, model drift (run 2) \\
+    \fig{fig09\_wall\_example.png} & Wall test task \\
+    \midrule
+    \texttt{\small figures/videos/*.mp4} & \raggedright Videos: pointmaze\_example, pusht\_easy,
+      pusht\_medium, pusht\_hard, pusht\_failure\_first\_plan, wall\_example \tabularnewline
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
-
-\subsection{Conclusion}
-
-The DINO-WM model, using its frozen DINOv2 visual backbone and CEM-based MPC
-planner, achieved a \textbf{100\% success rate} on PushT across 50 diverse
-episodes. This matches or exceeds the 86\% rate reported in the original paper.
-The model robustly handles a wide range of initial block configurations —
-including very hard cases where the block must travel more than 100 pixels to
-reach the goal — without any task-specific fine-tuning. The consistently low
-visual embedding distances ($\approx$1--5) confirm that DINOv2 features provide
-a reliable and task-agnostic goal representation for contact-rich manipulation.
 
 \end{document}

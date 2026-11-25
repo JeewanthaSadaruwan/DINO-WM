@@ -1,0 +1,104 @@
+{
+ "paper": {
+  "PointMaze": 0.98,
+  "PushT": 0.9,
+  "Wall": 0.96
+ },
+ "pointmaze": {
+  "runs": 50,
+  "successes": 50.0,
+  "distinct_tasks": 1,
+  "state_dist": {
+   "mean": 1.8156530952296028,
+   "median": 1.7685052655981457,
+   "min": 0.9064339799921752,
+   "max": 2.871539032066013
+  },
+  "visual_dist": {
+   "mean": 0.4678968696853742,
+   "median": 0.48138884460034015,
+   "min": 0.3093311543367347,
+   "max": 0.5843165391156463
+  },
+  "proprio_dist": {
+   "mean": 0.6931846100091934,
+   "median": 0.7099322080612183,
+   "min": 0.35327285528182983,
+   "max": 1.1001472473144531
+  }
+ },
+ "pusht": {
+  "runs": 50,
+  "successes": 48,
+  "unfinished": [
+   "evaluation_logs/pusht/eval_2.log",
+   "evaluation_logs/pusht/eval_9.log"
+  ],
+  "distinct_tasks": 49,
+  "state_dist": {
+   "mean": 41.86716655890147,
+   "median": 36.73832702636719,
+   "min": 13.701977729797363,
+   "max": 108.6958999633789
+  },
+  "visual_dist": {
+   "mean": 2.9605552344635773,
+   "median": 3.0185081845238093,
+   "min": 1.0526214392006803,
+   "max": 4.994359853316326
+  },
+  "proprio_dist": {
+   "mean": 15.775981158018112,
+   "median": 14.866184711456299,
+   "min": 4.370769500732422,
+   "max": 38.1002311706543
+  },
+  "block_dist": {
+   "min": 0.0,
+   "median": 30.688329696655273,
+   "max": 126.48361206054688
+  },
+  "angle_deg": {
+   "min": 0.0,
+   "median": 17.47824001312256,
+   "max": 120.31188707965102
+  },
+  "one_iter_runs": 48,
+  "example_easy": {
+   "log": "evaluation_logs/pusht/eval_40.log",
+   "block_dist": 12.932757377624512,
+   "angle_deg": 7.329554080963135
+  },
+  "example_medium": {
+   "log": "evaluation_logs/pusht/eval_42.log",
+   "block_dist": 30.68302345275879,
+   "angle_deg": 12.09516217191271
+  },
+  "example_hard": {
+   "log": "evaluation_logs/pusht/eval_44.log",
+   "block_dist": 126.48361206054688,
+   "angle_deg": 20.237655639648438
+  },
+  "example_failure": {
+   "log": "evaluation_logs/pusht/eval_2.log",
+   "block_dist": 62.97811508178711,
+   "angle_deg": 46.5293083190918,
+   "mpc_iters": 69,
+   "last_plan": "plan67.png"
+  }
+ },
+ "wall_test": {
+  "runs": 1,
+  "successes": 1.0,
+  "final": {
+   "success_rate": 1.0,
+   "mean_state_dist": 3.4051109299761184,
+   "mean_visual_dist": 0.980128288269043,
+   "mean_proprio_dist": 2.332322120666504,
+   "mean_div_visual_emb": 57.472869873046875,
+   "mean_div_proprio_emb": 1.88721764087677
+  },
+  "mpc_iters": 1
+ },
+ "wall_50": null
+}
